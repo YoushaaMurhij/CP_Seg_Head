@@ -28,10 +28,11 @@ class Seg_Head(nn.Module):
     def forward(self, x, batch=None):
         x = self.conv_head1(x)
         # torch.Size([1, 64, 128, 128])
-        x = F.interpolate(x, scale_factor=4, mode='bilinear', align_corners=True)
-        # torch.Size([1, 64, 512, 512])
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        # torch.Size([1, 64, 256, 256])
         x = self.conv_head2(x)
-        # torch.Size([1, 19, 512, 512])
+        # torch.Size([1, 19, 256, 256])
+        x = x.argmax(1)
         return x
 
 
