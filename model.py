@@ -4,31 +4,35 @@ import torch.nn.functional as F
 
 from det3d.models.utils import Sequential
 # input tensor [1, 384, 128, 128]
-# output
+# output torch.Size([1, 4, 512, 512])
 
 class Seg_Head(nn.Module):
 
-    def __init__(self, init_bias=-2.19):
+    def __init__(self):
         super(Seg_Head, self).__init__()
          
-        self.conv_head = Sequential(
-            nn.Conv2d(1, 1, kernel_size=3, padding=1, bias=True),
-            nn.BatchNorm2d(64),
+        self.conv_head1 = nn.Sequential(
+            nn.Conv2d(384, 128, kernel_size=3, padding=1, bias=True),
+            nn.BatchNorm2d(128),
             nn.ReLU(inplace=True),
-            nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1, bias=True)
+            nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1, bias=True)
         )
 
-        # Focal loss paper points out that it is important to initialize the bias 
-        self.conv_head[-1].bias.data.fill_(init_bias)
+        self.conv_head2 = nn.Sequential(
+            nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, 19, kernel_size=3, stride=1, padding=1, bias=True)
+        )
 
-
-    def forward(self, x):
-        x = self.conv_head(x)
-        up_level1 = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-       
-       
+    def forward(self, x, batch=None):
+        x = self.conv_head1(x)
+        # torch.Size([1, 64, 128, 128])
+        x = F.interpolate(x, scale_factor=4, mode='bilinear', align_corners=True)
+        # torch.Size([1, 64, 512, 512])
+        x = self.conv_head2(x)
+        # torch.Size([1, 19, 512, 512])
         return x
-
 
 
 net = Net()
