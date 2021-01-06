@@ -1,4 +1,11 @@
+import sys
+import logging
 import numpy as np
+from os import listdir
+from os.path import isfile, join
+
+from label_mapping import *
+
 
 def load_cloud_from_deecamp_file(pc_f, lb_f):
         logging.info('loading cloud from: {} and labels from : {}'.format(pc_f, lb_f))
@@ -13,11 +20,12 @@ def load_cloud_from_deecamp_file(pc_f, lb_f):
 def main():
 
     grid_size = 256
-    pc_length = 51.2 * 2
+    pos_offset = 51.2 
     pc_width = 51.2 * 2
-    num_classes = 19 
+    num_classes = 33 
     
-    grid = np.empty([grid_size, grid_size, num_classes])
+    seg_grid = np.zeros([grid_size, grid_size, num_classes])
+    seg_grid.astype(int)
 
     if len(sys.argv) < 3:
         logging.error('Enter a lidar bin folder[1] path and label folder[2] path!')
@@ -28,11 +36,20 @@ def main():
         lbl_files = [f for f in listdir(lbl_path) if isfile(join(lbl_path, f))]
         bin_files.sort()
         lbl_files.sort()
-    for bin, lbl in enumerate(bin_files, lbl_files):
-        print(lbl)
-        cloud, label = load_cloud_from_deecamp_file(mypath+"/"+bin, mypath+"/"+lbl)
+    for i, (bin, lbl) in enumerate(zip(bin_files, lbl_files)):
+        cloud, label = load_cloud_from_deecamp_file(bin_path+"/"+bin, lbl_path+"/"+lbl)
+        # print(f'cloud shape os :{np.shape(cloud)}')
+        # print(f'label shape is :{np.shape(label)}')
 
+        for j, (pt, lb) in enumerate(zip(cloud, label)):
+            # print(f'indices are {int((pt[0] + pos_offset) * pc_width / grid_size)}, {int((pt[1] + pos_offset) * pc_width / grid_size)}, {class2id[lb]}')
+            if lb>33:
+                continue
+            seg_grid[int((pt[0] + pos_offset) * pc_width / grid_size), int((pt[1] + pos_offset) * pc_width / grid_size), class2id[lb]]+=1   #TODO bug in grid always zeros
+        
+        fin_grid = np.argmax(seg_grid, axis=2)
+        np.savetxt(lbl+'_grd', fin_grid, delimiter=',')
+        
 
-
-if __name__="__main__":
+if __name__=="__main__":
     main()
