@@ -102,7 +102,7 @@ class CenterPointDetector(object):
             outputs = self.net(self.inputs, return_loss=False)  #[0]
 
         #print(outputs.shape)
-        torch.save(outputs, f+'.pt')
+        torch.save(outputs[0], f+'.pt')
         # features = outputs.detach().cpu().numpy()
         # np.savetxt(f, features, newline=" ")
 

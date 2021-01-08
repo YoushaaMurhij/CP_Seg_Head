@@ -2,9 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from det3d.models.utils import Sequential
 # input tensor [1, 384, 128, 128]
-# output torch.Size([1, 4, 512, 512])
 
 class Seg_Head(nn.Module):
 
@@ -25,7 +23,7 @@ class Seg_Head(nn.Module):
             nn.Conv2d(32, 19, kernel_size=3, stride=1, padding=1, bias=True)
         )
 
-    def forward(self, x, batch=None):
+    def forward(self, x):
         x = self.conv_head1(x)
         # torch.Size([1, 64, 128, 128])
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
@@ -36,5 +34,5 @@ class Seg_Head(nn.Module):
         return x
 
 
-net = Net()
-print(net)
+# net = Net()
+# print(net)
