@@ -12,7 +12,7 @@ from loss import FocalLoss
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
     parser.add_argument('--device', default='cuda:0', help='device')
-    parser.add_argument('-b', '--batch-size', default=4, type=int)
+    parser.add_argument('-b', '--batch-size', default=1, type=int)
     parser.add_argument('--epochs', default=30, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N', help='number of data loading workers (default: 16)')
     parser.add_argument('--lr', default=0.007, type=float, help='initial learning rate')
@@ -70,6 +70,7 @@ def main(args):
             optimizer.zero_grad()
             # forward + backward + optimize
             outputs = model(features)
+            print(outputs.shape)
             loss = criterion(outputs, labels)
 
             loss.backward()
