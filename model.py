@@ -30,9 +30,4 @@ class Seg_Head(nn.Module):
         # torch.Size([1, 64, 256, 256])
         x = self.conv_head2(x)
         # torch.Size([1, 19, 256, 256])
-        x = x.argmax(1)
         return x
-
-
-# net = Net()
-# print(net)
