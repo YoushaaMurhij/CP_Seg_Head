@@ -20,8 +20,6 @@ from model import *
 from loss import FocalLoss
 import utils
 
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
     parser.add_argument('--device', default='cuda:0', help='device')
@@ -30,29 +28,26 @@ def parse_args():
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N', help='number of data loading workers (default: 16)')
     parser.add_argument('--lr', default=0.007, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
+    parser.add_argument('--resume', default='seg_head.pth', help='resume from checkpoint')
     parser.add_argument("--test-only", dest="test_only", help="Only test the model", action="store_true")
+    parser.add_argument("--pretrained", dest="pretrained", help="Use pre-trained models", action="store_true")
     
     args = parser.parse_args()
     return args
 
-
-def evaluate(model, data_loader, device, num_classes):
+def evaluate(model, dataloader, device, num_classes):
     model.eval()
     confmat = utils.ConfusionMatrix(num_classes)
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
     with torch.no_grad():
-        for data in metric_logger.log_every(data_loader, 4, header):
+        for data in metric_logger.log_every(dataloader, 4, header):
             feature, label = data['feature'].to(device), data['label'].to(device)
             output = model(feature)
-            #output = output['label']
-
             confmat.update(label.cpu().flatten(), output.argmax(1).cpu().flatten())
-
         confmat.reduce_from_all_processes()
 
     return confmat
-
 
 def main(args):
 
@@ -81,11 +76,19 @@ def main(args):
                                             sampler=train_sampler)
     validation_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
                                                 sampler=valid_sampler)
-
     # for i_batch, sample_batched in enumerate(train_loader):
     #     print(i_batch, sample_batched['feature'].size(), sample_batched['label'].size())
     
-    device = args.device
+    device = torch.device(args.device)
+
+    if args.test_only:
+        model = Seg_Head()
+        model.to(device)
+        model.load_state_dict(torch.load(args.resume))
+        confmat = evaluate(model, validation_loader, device=device, num_classes=num_classes)
+        print(confmat)
+        return
+    
     model = Seg_Head()
     model.to(device)
     criterion = nn.CrossEntropyLoss()
@@ -123,11 +126,7 @@ def main(args):
     PATH = './seg_head.pth'
     torch.save(model.state_dict(), PATH)
 
-    if args.test_only:
-        confmat = evaluate(model, validation_loader, device=device, num_classes=num_classes)
-        print(confmat)
-        return
-
+    
 
 if __name__=="__main__":
     args = parse_args()
