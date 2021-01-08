@@ -22,10 +22,7 @@ def main():
     pos_offset = 80 
     pc_width = 80 * 2
     num_classes = 33 
-    save_png = True
-
-    seg_grid = np.zeros([grid_size, grid_size, num_classes])
-    seg_grid.astype(int)
+    save_png = False
 
     if len(sys.argv) < 3:
         logging.error('Enter a lidar bin folder[1] path and label folder[2] path!')
@@ -37,6 +34,8 @@ def main():
         bin_files.sort()
         lbl_files.sort()
     for i, (bin, lbl) in enumerate(zip(bin_files, lbl_files)):
+        seg_grid = np.zeros([grid_size, grid_size, num_classes])
+        seg_grid.astype(int)
         cloud, label = load_cloud_from_deecamp_file(bin_path+"/"+bin, lbl_path+"/"+lbl)
         # print(f'cloud shape os :{np.shape(cloud)}')
 
@@ -46,7 +45,7 @@ def main():
             # print(f'x = {pt[0]} and y = {pt[1]}')
             seg_grid[int((pt[0] + pos_offset) * grid_size / pc_width - 1), int((pt[1] + pos_offset) * grid_size / pc_width - 1), class2id[lb]] += 1  
         fin_grid = np.argmax(seg_grid, axis=2)
-        np.savetxt(lbl+'_grd', fin_grid,  fmt='%d' , delimiter=',')
+        np.savetxt(lbl[:6]+'.txt', fin_grid,  fmt='%d' , delimiter=',')
 
         if save_png:
             plt.figure()

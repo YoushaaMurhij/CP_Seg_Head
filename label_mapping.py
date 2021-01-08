@@ -1,5 +1,3 @@
-
-
 label_name_mapping = {
     0: "unlabeled",
     1: "outlier",

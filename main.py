@@ -3,11 +3,20 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import torch.optim as optim
-
-
+from torch.utils.data import DataLoader
+from dataset import *
+from model import *
 
 def main():
 
+    dataset = FeaturesDataset(feat_dir='./data/features', label_dir='./data/targets/')
+    # for i in range(len(dataset)):
+    #     sample = dataset[i]
+    #     print(i, sample['feature'].shape, sample['label'].shape)
+    dataloader = DataLoader(dataset, batch_size=4, shuffle=True, num_workers=0)
+    device = 'cuda'
+    model = Seg_Head()
+    model.to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
@@ -40,5 +49,5 @@ def main():
     PATH = './seg_head.pth'
     torch.save(net.state_dict(), PATH)
 
-if __name__="__main__":
+if __name__=="__main__":
     main()
