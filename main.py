@@ -1,3 +1,13 @@
+  
+"""
+-----------------------------------------------------------------------------------
+# Author: Youshaa Murhij
+# DoC: 2021.01.5
+# email: yosha.morheg@gmail.com
+-----------------------------------------------------------------------------------
+# Description: Training script for Semantic Head
+"""
+
 import argparse
 import torch
 import torch.nn as nn
@@ -8,6 +18,9 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from dataset import *
 from model import *
 from loss import FocalLoss
+import utils
+
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
@@ -17,14 +30,36 @@ def parse_args():
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N', help='number of data loading workers (default: 16)')
     parser.add_argument('--lr', default=0.007, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
+    parser.add_argument("--test-only", dest="test_only", help="Only test the model", action="store_true")
+    
     args = parser.parse_args()
     return args
+
+
+def evaluate(model, data_loader, device, num_classes):
+    model.eval()
+    confmat = utils.ConfusionMatrix(num_classes)
+    metric_logger = utils.MetricLogger(delimiter="  ")
+    header = 'Test:'
+    with torch.no_grad():
+        for data in metric_logger.log_every(data_loader, 4, header):
+            feature, label = data['feature'].to(device), data['label'].to(device)
+            output = model(feature)
+            #output = output['label']
+
+            confmat.update(label.cpu().flatten(), output.argmax(1).cpu().flatten())
+
+        confmat.reduce_from_all_processes()
+
+    return confmat
+
 
 def main(args):
 
     validation_split = .2
     shuffle_dataset = True
     random_seed= 42
+    num_classes = 33
 
     dataset = FeaturesDataset(feat_dir='./data/features', label_dir='./data/targets/')
     # dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
@@ -57,6 +92,7 @@ def main(args):
     #criterion = FocalLoss(gamma=2)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
+    model.train()
     num_epochs = args.epochs # loop over the dataset multiple times
     for epoch in range(num_epochs):  
 
@@ -70,7 +106,6 @@ def main(args):
             optimizer.zero_grad()
             # forward + backward + optimize
             outputs = model(features)
-            print(outputs.shape)
             loss = criterion(outputs, labels)
 
             loss.backward()
@@ -78,15 +113,21 @@ def main(args):
 
             # print statistics
             running_loss += loss.item()
-            if i % 4 == 3:    # print every 2000 mini-batches
+            if i % 2 == 1:    # print every 2000 mini-batches
                 print('[%d, %5d] loss: %.3f' %
-                    (epoch + 1, i + 1, running_loss / 4))
+                    (epoch + 1, i + 1, running_loss / 2))
                 running_loss = 0.0
 
     print('Finished Training')
 
     PATH = './seg_head.pth'
-    torch.save(net.state_dict(), PATH)
+    torch.save(model.state_dict(), PATH)
+
+    if args.test_only:
+        confmat = evaluate(model, validation_loader, device=device, num_classes=num_classes)
+        print(confmat)
+        return
+
 
 if __name__=="__main__":
     args = parse_args()

@@ -1,3 +1,12 @@
+"""
+-----------------------------------------------------------------------------------
+# Author: Youshaa Murhij
+# DoC: 2021.01.5
+# email: yosha.morheg@gmail.com
+-----------------------------------------------------------------------------------
+# Description: Cutsom Dataset loading script for Semantic Head
+"""
+
 import os
 import torch
 from torch.utils.data import Dataset
