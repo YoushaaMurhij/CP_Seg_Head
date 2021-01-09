@@ -126,9 +126,12 @@ def main(args):
                     outputs = model(features)
                     loss = criterion(outputs, labels)
 
+                    correct = (outputs.argmax(1) == labels).sum().item()
+                    accuracy = correct / args.batch_size
+
                     loss.backward()
                     optimizer.step()
-                    tepoch.set_postfix(loss=loss.item()) #, accuracy=100. * accuracy)
+                    tepoch.set_postfix(loss=loss.item(), accuracy=100. * accuracy)
                     # print statistics
                     # running_loss += loss.item()
                     # if i % 500 == 499:    # print every 100 mini-batches
