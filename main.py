@@ -127,7 +127,7 @@ def main(args):
                     loss = criterion(outputs, labels)
 
                     correct = (outputs.argmax(1) == labels).sum().item()
-                    accuracy = correct / args.batch_size
+                    accuracy = correct / (args.batch_size * 256 * 256)
 
                     loss.backward()
                     optimizer.step()
