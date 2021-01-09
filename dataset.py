@@ -37,6 +37,6 @@ class FeaturesDataset(Dataset):
         label = np.loadtxt(label_name, dtype=int, delimiter=',')
         #label = label.astype('int')
 
-        sample = {'feature': feature, 'label': label}
+        sample = {'feature': feature, 'label': label, 'index': idx}
 
         return sample

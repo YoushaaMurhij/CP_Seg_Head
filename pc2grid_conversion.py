@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from label_mapping import *
 
 def load_cloud_from_deecamp_file(pc_f, lb_f):
-        print('loading cloud from: {} and labels from : {}'.format(pc_f, lb_f))
+        logging.info('loading cloud from: {} and labels from : {}'.format(pc_f, lb_f))
         num_features = 4
         cloud = np.fromfile(pc_f, dtype=np.float32, count=-1).reshape([-1, num_features])
         label = np.fromfile(lb_f, dtype=np.uint32)

@@ -1,4 +1,3 @@
-  
 """
 -----------------------------------------------------------------------------------
 # Author: Youshaa Murhij
@@ -7,7 +6,6 @@
 -----------------------------------------------------------------------------------
 # Description: Training script for Semantic Head
 """
-
 import argparse
 import torch
 import torch.nn as nn
@@ -23,14 +21,14 @@ import utils
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
     parser.add_argument('--device', default='cuda:0', help='device')
-    parser.add_argument('-b', '--batch-size', default=1, type=int)
-    parser.add_argument('--epochs', default=30, type=int, metavar='N', help='number of total epochs to run')
-    parser.add_argument('-j', '--workers', default=4, type=int, metavar='N', help='number of data loading workers (default: 16)')
+    parser.add_argument('-b', '--batch-size', default=16, type=int)
+    parser.add_argument('--epochs', default=2, type=int, metavar='N', help='number of total epochs to run')
+    parser.add_argument('-j', '--workers', default=16, type=int, metavar='N', help='number of data loading workers (default: 16)')
     parser.add_argument('--lr', default=0.007, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
-    parser.add_argument('--resume', default='seg_head.pth', help='resume from checkpoint')
+    parser.add_argument('--resume', default='', help='resume from checkpoint', action="store_true")
     parser.add_argument("--test-only", dest="test_only", help="Only test the model", action="store_true")
-    parser.add_argument("--pretrained", dest="pretrained", help="Use pre-trained models", action="store_true")
+    parser.add_argument("--pretrained", dest="seg_head.pth", help="Use pre-trained models")
     
     args = parser.parse_args()
     return args
@@ -42,13 +40,22 @@ def evaluate(model, dataloader, device, num_classes):
     header = 'Test:'
     with torch.no_grad():
         for data in metric_logger.log_every(dataloader, 4, header):
-            feature, label = data['feature'].to(device), data['label'].to(device)
+            feature, label, index = data['feature'].to(device), data['label'].to(device)
             output = model(feature)
-            confmat.update(label.cpu().flatten(), output.argmax(1).cpu().flatten())
+            output = output.argmax(1)
+            confmat.update(label.cpu().flatten(), output.cpu().flatten())
+            visual2d(output, index)
+
         confmat.reduce_from_all_processes()
 
     return confmat
 
+def visual2d(grid, index):
+    plt.figure()
+    plt.imshow(grid, interpolation='bilinear')
+    plt.savefig('./figs/'+str(index)+'.png')
+    plt.clf()
+    
 def main(args):
 
     validation_split = .2
@@ -56,7 +63,7 @@ def main(args):
     random_seed= 42
     num_classes = 33
 
-    dataset = FeaturesDataset(feat_dir='./data/features', label_dir='./data/targets/')
+    dataset = FeaturesDataset(feat_dir='/home/josh94mur/data/features', label_dir='/home/josh94mur/data/targets/')
     # dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
 
     # Creating data indices for training and validation splits:
@@ -84,49 +91,51 @@ def main(args):
     if args.test_only:
         model = Seg_Head()
         model.to(device)
-        model.load_state_dict(torch.load(args.resume))
+        model.load_state_dict(torch.load(args.pretrained))
         confmat = evaluate(model, validation_loader, device=device, num_classes=num_classes)
         print(confmat)
+        print("Finished Testing!")
         return
-    
-    model = Seg_Head()
-    model.to(device)
-    criterion = nn.CrossEntropyLoss()
-    #criterion = FocalLoss(gamma=2)
-    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+    else:
+        model = Seg_Head()
+        model.to(device)
 
-    model.train()
-    num_epochs = args.epochs # loop over the dataset multiple times
-    for epoch in range(num_epochs):  
+        if args.resume:
+            model.load_state_dict(torch.load(args.pretrained))
 
-        running_loss = 0.0
-        for i, data in enumerate(train_loader, 0):
-            features = data['feature']
-            labels = data['label']
-            if torch.cuda.is_available(): 
-                labels = labels.cuda()
+        criterion = nn.CrossEntropyLoss()
+        #criterion = FocalLoss(gamma=2)
+        optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
-            optimizer.zero_grad()
-            # forward + backward + optimize
-            outputs = model(features)
-            loss = criterion(outputs, labels)
+        model.train()
+        num_epochs = args.epochs # loop over the dataset multiple times
+        for epoch in range(num_epochs):  
 
-            loss.backward()
-            optimizer.step()
+            running_loss = 0.0
+            for i, data in enumerate(train_loader, 0):
+                features = data['feature']
+                labels = data['label']
+                if torch.cuda.is_available(): 
+                    labels = labels.cuda()
 
-            # print statistics
-            running_loss += loss.item()
-            if i % 2 == 1:    # print every 2000 mini-batches
-                print('[%d, %5d] loss: %.3f' %
-                    (epoch + 1, i + 1, running_loss / 2))
-                running_loss = 0.0
+                optimizer.zero_grad()
+                # forward + backward + optimize
+                outputs = model(features)
+                loss = criterion(outputs, labels)
 
-    print('Finished Training')
+                loss.backward()
+                optimizer.step()
 
-    PATH = './seg_head.pth'
-    torch.save(model.state_dict(), PATH)
+                # print statistics
+                running_loss += loss.item()
+                if i % 100 == 99:    # print every 100 mini-batches
+                    print('[%d, %5d] loss: %.3f' %
+                        (epoch + 1, i + 1, running_loss / 100))
+                    running_loss = 0.0
 
-    
+        PATH = './seg_head.pth'
+        torch.save(model.state_dict(), PATH)
+        print('Finished Training. Model Saved!')
 
 if __name__=="__main__":
     args = parse_args()
