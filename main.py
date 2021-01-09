@@ -17,11 +17,12 @@ from dataset import *
 from model import *
 from loss import FocalLoss
 import utils
+from tqdm import tqdm
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
     parser.add_argument('--device', default='cuda:0', help='device')
-    parser.add_argument('-b', '--batch-size', default=16, type=int)
+    parser.add_argument('-b', '--batch-size', default=128, type=int)
     parser.add_argument('--epochs', default=2, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('-j', '--workers', default=16, type=int, metavar='N', help='number of data loading workers (default: 16)')
     parser.add_argument('--lr', default=0.007, type=float, help='initial learning rate')
@@ -51,7 +52,7 @@ def evaluate(model, dataloader, device, num_classes):
     return confmat
 
 def visual2d(grid, index):
-    plt.figure()
+    plt.figure() #TODO add colors
     plt.imshow(grid, interpolation='bilinear')
     plt.savefig('./figs/'+str(index)+'.png')
     plt.clf()
@@ -110,28 +111,30 @@ def main(args):
         model.train()
         num_epochs = args.epochs # loop over the dataset multiple times
         for epoch in range(num_epochs):  
+            with tqdm(train_loader, unit = "batch") as tepoch:
+                # running_loss = 0.0
+                for data in tepoch:
+                    tepoch.set_description(f"Epoch {epoch}")
 
-            running_loss = 0.0
-            for i, data in enumerate(train_loader, 0):
-                features = data['feature']
-                labels = data['label']
-                if torch.cuda.is_available(): 
-                    labels = labels.cuda()
+                    features = data['feature']
+                    labels = data['label']
+                    if torch.cuda.is_available(): 
+                        labels = labels.cuda()
 
-                optimizer.zero_grad()
-                # forward + backward + optimize
-                outputs = model(features)
-                loss = criterion(outputs, labels)
+                    optimizer.zero_grad()
+                    # forward + backward + optimize
+                    outputs = model(features)
+                    loss = criterion(outputs, labels)
 
-                loss.backward()
-                optimizer.step()
-
-                # print statistics
-                running_loss += loss.item()
-                if i % 100 == 99:    # print every 100 mini-batches
-                    print('[%d, %5d] loss: %.3f' %
-                        (epoch + 1, i + 1, running_loss / 100))
-                    running_loss = 0.0
+                    loss.backward()
+                    optimizer.step()
+                    tepoch.set_postfix(loss=loss.item()) #, accuracy=100. * accuracy)
+                    # print statistics
+                    # running_loss += loss.item()
+                    # if i % 500 == 499:    # print every 100 mini-batches
+                    #     print('[%d, %5d] loss: %.3f' %
+                    #         (epoch + 1, i + 1, running_loss / 500))
+                    #     running_loss = 0.0
 
         PATH = './seg_head.pth'
         torch.save(model.state_dict(), PATH)
