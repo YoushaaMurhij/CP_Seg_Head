@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 from dataset import *
 from model import *
+from visualizer import *
 from loss import FocalLoss
 import utils
 from tqdm import tqdm
@@ -52,13 +53,6 @@ def evaluate(model, dataloader, device, num_classes):
 
     return confmat
 
-def visual2d(grid, index):
-    '''Visualizing a sample for the every batch as a picture'''
-    plt.figure() #TODO add colors
-    plt.imshow(grid, interpolation='bilinear')
-    plt.savefig('./figs/'+str(index)+'.png')
-    plt.clf()
-    
 def main(args):
 
     validation_split = .2
