@@ -25,14 +25,14 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
     parser.add_argument('--device', default='cuda:0', help='device')
     parser.add_argument('-b', '--batch-size', default=128, type=int)
-    parser.add_argument('--epochs', default=30, type=int, metavar='N', help='number of total epochs to run')
-    parser.add_argument('-j', '--workers', default=16, type=int, metavar='N', help='number of data loading workers (default: 16)')
+    parser.add_argument('--epochs', default=30, type=int, metavar='N', help='number of epochs')
+    parser.add_argument('-j', '--workers', default=16, type=int, metavar='N', help='number of data loading workers')
     parser.add_argument('--lr', default=0.001, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
     parser.add_argument('--resume', default='', help='resume from checkpoint', action="store_true")
     parser.add_argument("--test-only", dest="test_only", help="Only test the model", action="store_true")
     parser.add_argument("--pretrained", default="seg_head.pth", help="Use pre-trained models")
-    
+
     args = parser.parse_args()
     return args
 

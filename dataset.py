@@ -21,10 +21,10 @@ class FeaturesDataset(Dataset):
         
         self.feat_dir = feat_dir
         self.label_dir = label_dir
+        self.features_files = [f for f in listdir(self.feat_dir) if isfile(join(self.feat_dir, f))]
 
     def __len__(self):
-        self.files = [f for f in listdir(self.feat_dir) if isfile(join(self.feat_dir, f))]
-        return len(self.files)
+        return len(self.features_files)
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
