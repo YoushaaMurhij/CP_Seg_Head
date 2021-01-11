@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 from label_mapping import *
 
-def load_cloud_from_deecamp_file(pc_f, lb_f):
+def load_cloud_from_bin_file(pc_f, lb_f):
         logging.info('loading cloud from: {} and labels from : {}'.format(pc_f, lb_f))
         num_features = 4
         cloud = np.fromfile(pc_f, dtype=np.float32, count=-1).reshape([-1, num_features])
@@ -36,7 +36,7 @@ def main():
     for i, (bin, lbl) in enumerate(zip(bin_files, lbl_files)):
         seg_grid = np.zeros([grid_size, grid_size, num_classes])
         seg_grid.astype(int)
-        cloud, label = load_cloud_from_deecamp_file(bin_path+"/"+bin, lbl_path+"/"+lbl)
+        cloud, label = load_cloud_from_bin_file(bin_path+"/"+bin, lbl_path+"/"+lbl)
         # print(f'cloud shape os :{np.shape(cloud)}')
 
         for j, (pt, lb) in enumerate(zip(cloud, label)):
