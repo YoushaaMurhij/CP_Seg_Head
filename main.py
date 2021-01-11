@@ -20,6 +20,8 @@ from loss import FocalLoss
 import utils
 from tqdm import tqdm
 from matplotlib import pyplot as plt
+import numpy as np
+from time import sleep
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
@@ -130,6 +132,7 @@ def main(args):
                     loss.backward()
                     optimizer.step()
                     tepoch.set_postfix(loss=loss.item(), accuracy=100. * accuracy)
+                    sleep(0.01)
 
         PATH = './seg_head.pth'
         torch.save(model.state_dict(), PATH)

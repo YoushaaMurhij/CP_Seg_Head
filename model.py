@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import onnx
 
 # input tensor [1, 384, 128, 128]
 
@@ -47,10 +48,14 @@ def main():
 
     torch_model = Seg_Head()
     x = torch.randn(1, 384, 128, 128, requires_grad=True)
-    torch_out = torch_model(x)
-    print(torch_out.shape)
+    # torch_out = torch_model(x)
+    # print(torch_out.shape)
     torch.onnx.export(torch_model, x, "Seg_Head.onnx", export_params=True, opset_version=11,          
                    do_constant_folding=True, input_names = ['input'], output_names = ['output'])
+
+    model = onnx.load("Seg_Head.onnx")
+    model_with_shapes = onnx.shape_inference.infer_shapes(model)
+    onnx.save(model_with_shapes, "Seg_Head_with_shapes.onnx")
 
 if __name__ == "__main__":
     main()
