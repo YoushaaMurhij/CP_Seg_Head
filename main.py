@@ -141,3 +141,10 @@ def main(args):
 if __name__=="__main__":
     args = parse_args()
     main(args)
+
+
+# TODO : add tensorboard support
+# TODO : add Parallel training support
+# TODO : move to pytrorch lighting!
+# TODO : add accuracey metric (from sem seg)
+# TODO : add something here later :)
