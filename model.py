@@ -24,7 +24,7 @@ class Seg_Head(nn.Module):
             nn.ReLU(inplace=True)
         )
 
-        self.up = nn.ConvTranspose2d(128, 256, 3, stride=2)
+        self.up = nn.ConvTranspose2d(self.mid_layer//2, self.mid_layer//2, 2, stride=2, padding=0)
 
         self.conv_head2 = nn.Sequential(
             nn.Conv2d(self.mid_layer//2, self.mid_layer//4, kernel_size=self.kernel_size, padding=1, bias=True),
@@ -37,13 +37,9 @@ class Seg_Head(nn.Module):
 
     def forward(self, x):
         x = self.conv_head1(x)
-        print(x.shape)
-        # torch.Size([1, 64, 128, 128])
         x = self.up(x)
         #x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)     
-        # torch.Size([1, 64, 256, 256])
         x = self.conv_head2(x)
-        # torch.Size([1, 19, 256, 256])
         return x
 
 
