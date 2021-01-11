@@ -25,10 +25,10 @@ class Seg_Head(nn.Module):
             nn.ReLU(inplace=True)
         )
 
-        self.up = nn.ConvTranspose2d(self.mid_layer//2, self.output_size, 2, stride=2, padding=0)
+        self.up = nn.ConvTranspose2d(self.mid_layer//2, self.mid_layer//4, 2, stride=2, padding=0)
 
         self.conv_head2 = nn.Sequential(
-            nn.Conv2d(self.mid_layer//2, self.mid_layer//4, kernel_size=self.kernel_size, padding=1, bias=True),
+            #nn.Conv2d(self.mid_layer//2, self.mid_layer//4, kernel_size=self.kernel_size, padding=1, bias=True),
             nn.BatchNorm2d(self.mid_layer//4),
             nn.ReLU(inplace=True),
             nn.Conv2d(self.mid_layer//4, self.output_size, kernel_size=self.kernel_size, stride=1, padding=1, bias=True),
@@ -38,7 +38,7 @@ class Seg_Head(nn.Module):
         x = self.conv_head1(x)
         x = self.up(x)
         #x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)     
-        #x = self.conv_head2(x)
+        x = self.conv_head2(x)
         return x
 
 
@@ -46,11 +46,8 @@ def main():
 
     torch_model = Seg_Head()
     x = torch.randn(1, 384, 128, 128, requires_grad=True)
-    # torch_out = torch_model(x)
-    # print(torch_out.shape)
     torch.onnx.export(torch_model, x, "Seg_Head.onnx", export_params=True, opset_version=11,          
                    do_constant_folding=True, input_names = ['input'], output_names = ['output'])
-
     model = onnx.load("Seg_Head.onnx")
     model_with_shapes = onnx.shape_inference.infer_shapes(model)
     onnx.save(model_with_shapes, "Seg_Head_with_shapes.onnx")

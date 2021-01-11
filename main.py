@@ -41,18 +41,14 @@ def parse_args():
 def evaluate(model, dataloader, device, num_classes):
     model.eval()
     confmat = utils.ConfusionMatrix(num_classes)
-    metric_logger = utils.MetricLogger(delimiter="  ")
-    header = 'Test:'
     with torch.no_grad():
-        for data in metric_logger.log_every(dataloader, 4, header):
+        for data in dataloader:
             feature, label, index = data['feature'].to(device), data['label'].to(device), data['index']
             output = model(feature)
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
-            visual2d(output.cpu()[0], index[0])  
-
+            # visual2d(output.cpu()[0], index[0])  
         confmat.reduce_from_all_processes()
-
     return confmat
 
 def main(args):
@@ -75,7 +71,6 @@ def main(args):
         np.random.shuffle(indices)
     train_indices, val_indices = indices[split:], indices[:split]
 
-    # Creating PT data samplers and loaders:
     train_sampler = SubsetRandomSampler(train_indices)
     valid_sampler = SubsetRandomSampler(val_indices)
 
@@ -105,13 +100,13 @@ def main(args):
             checkpoint = torch.load(args.pretrained, map_location='cpu')
             model.load_state_dict(checkpoint)
 
-        #criterion = nn.CrossEntropyLoss()
         criterion = FocalLoss(gamma=2, reduction='mean')
         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
         model.train()
-        num_epochs = args.epochs # loop over the dataset multiple times
-        for epoch in range(num_epochs):  
+        num_epochs = args.epochs 
+        for epoch in range(num_epochs):
+            confmat = evaluate(model, validation_loader, device=device, num_classes=num_classes)  
             with tqdm(train_loader, unit = "batch") as tepoch:
                 for data in tepoch:
                     tepoch.set_description(f"Epoch {epoch}")
@@ -122,18 +117,14 @@ def main(args):
                         labels = labels.cuda()
 
                     optimizer.zero_grad()
-                    # forward + backward + optimize
                     outputs = model(features)
+
                     loss = criterion(outputs, labels)
-
-                    correct = (outputs.argmax(1) == labels).sum().item()
-                    accuracy = correct / (args.batch_size * grid_size * grid_size)
-
                     loss.backward()
                     optimizer.step()
-                    tepoch.set_postfix(loss=loss.item(), accuracy=100. * accuracy)
-                    sleep(0.01)
 
+                    tepoch.set_postfix(loss=loss.item(), accuracy=confmat.acc_global, mean_IoU=confmat.mean_IoU)
+                    sleep(0.01)
         PATH = './seg_head.pth'
         torch.save(model.state_dict(), PATH)
         print('Finished Training. Model Saved!')
@@ -142,9 +133,8 @@ if __name__=="__main__":
     args = parse_args()
     main(args)
 
-
-# TODO : add tensorboard support
+# TODO : add tensorboard support && config
 # TODO : add Parallel training support
 # TODO : move to pytrorch lighting!
 # TODO : add accuracey metric (from sem seg)
-# TODO : add something here later :)
+# TODO : fix gpu_id == 1 :)
