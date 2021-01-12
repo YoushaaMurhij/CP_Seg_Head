@@ -17,10 +17,10 @@ class Seg_Head(nn.Module):
         self.kernel_size = 1
 
         self.conv_head1 = nn.Sequential(
-            nn.Conv2d(self.input_size, self.mid_layer, kernel_size=self.kernel_size, padding=1, bias=True),
+            nn.Conv2d(self.input_size, self.mid_layer, kernel_size=self.kernel_size, padding=0, bias=True),
             nn.BatchNorm2d(self.mid_layer),
             nn.ReLU(inplace=True),
-            nn.Conv2d(self.mid_layer, self.mid_layer//2, kernel_size=self.kernel_size, stride=1, padding=1, bias=True),
+            nn.Conv2d(self.mid_layer, self.mid_layer//2, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
             nn.BatchNorm2d(self.mid_layer//2),
             nn.ReLU(inplace=True)
         )
@@ -31,7 +31,7 @@ class Seg_Head(nn.Module):
             #nn.Conv2d(self.mid_layer//2, self.mid_layer//4, kernel_size=self.kernel_size, padding=1, bias=True),
             nn.BatchNorm2d(self.mid_layer//4),
             nn.ReLU(inplace=True),
-            nn.Conv2d(self.mid_layer//4, self.output_size, kernel_size=self.kernel_size, stride=1, padding=1, bias=True),
+            nn.Conv2d(self.mid_layer//4, self.output_size, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
         )
 
     def forward(self, x):
