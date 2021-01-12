@@ -3,10 +3,10 @@ import logging
 import numpy as np
 from os import listdir
 from os.path import isfile, join
-
 from matplotlib import pyplot as plt
-
 from label_mapping import *
+
+#pc_range=(-51.2, -51.2, -5.0, 51.2, 51.2, 3.0),
 
 def load_cloud_from_bin_file(pc_f, lb_f):
         logging.info('loading cloud from: {} and labels from : {}'.format(pc_f, lb_f))
@@ -19,8 +19,8 @@ def load_cloud_from_bin_file(pc_f, lb_f):
 
 def main():
     grid_size = 256
-    pos_offset = 80 
-    pc_width = 80 * 2
+    pos_offset = 51.2 
+    pc_width = 51.2 * 2
     num_classes = 33 
     save_png = True
 
@@ -41,9 +41,8 @@ def main():
         # print(f'cloud shape os :{np.shape(cloud)}')
         assert(len(cloud) == len(label)),"Points and labels lists should be the same lenght!"
         for j, (pt, lb) in enumerate(zip(cloud, label)):
-            if lb > 259:
+            if (lb > 259) or (pt[0] > pos_offset) or (pt[1] > pos_offset) or (pt[0] < -1 * pos_offset) or (pt[1] < -1 * pos_offset) :
                 continue
-            # print(f'x = {pt[0]} and y = {pt[1]}')
             seg_grid[int((pt[0] + pos_offset) * grid_size / pc_width - 1), int((pt[1] + pos_offset) * grid_size / pc_width - 1), class2id[lb]] += 1  
         fin_grid = np.argmax(seg_grid, axis=2)
         np.savetxt(lbl[:6]+'.txt', fin_grid,  fmt='%d' , delimiter=',')
@@ -51,7 +50,7 @@ def main():
         if save_png:
             plt.figure()
             plt.imshow(fin_grid, interpolation='nearest')
-            plt.savefig(lbl+'_grd.png')
+            plt.savefig(lbl[:6]+'.png')
             plt.clf()
         
 
