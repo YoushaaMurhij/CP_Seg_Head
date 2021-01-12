@@ -22,7 +22,7 @@ def main():
     pos_offset = 80 
     pc_width = 80 * 2
     num_classes = 33 
-    save_png = False
+    save_png = True
 
     if len(sys.argv) < 3:
         logging.error('Enter a lidar bin folder[1] path and label folder[2] path!')
@@ -31,6 +31,7 @@ def main():
         lbl_path=sys.argv[2]
         bin_files = [f for f in listdir(bin_path) if isfile(join(bin_path, f))]
         lbl_files = [f for f in listdir(lbl_path) if isfile(join(lbl_path, f))]
+        assert(len(bin_files) == len(lbl_files)),"Number of Points and labels files should be the same!"
         bin_files.sort()
         lbl_files.sort()
     for i, (bin, lbl) in enumerate(zip(bin_files, lbl_files)):
@@ -38,9 +39,9 @@ def main():
         seg_grid.astype(int)
         cloud, label = load_cloud_from_bin_file(bin_path+"/"+bin, lbl_path+"/"+lbl)
         # print(f'cloud shape os :{np.shape(cloud)}')
-
+        assert(len(cloud) == len(label)),"Points and labels lists should be the same lenght!"
         for j, (pt, lb) in enumerate(zip(cloud, label)):
-            if lb > 256:
+            if lb > 259:
                 continue
             # print(f'x = {pt[0]} and y = {pt[1]}')
             seg_grid[int((pt[0] + pos_offset) * grid_size / pc_width - 1), int((pt[1] + pos_offset) * grid_size / pc_width - 1), class2id[lb]] += 1  

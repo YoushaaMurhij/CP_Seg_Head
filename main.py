@@ -17,7 +17,7 @@ from dataset import FeaturesDataset
 from model import Seg_Head
 from visualizer import visual2d
 from loss import FocalLoss
-import utils
+from utils import *
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 import numpy as np
@@ -26,7 +26,7 @@ from time import sleep
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
     parser.add_argument('--device', default='cuda:0', help='device')
-    parser.add_argument('-b', '--batch-size', default=16, type=int)
+    parser.add_argument('-b', '--batch-size', default=1, type=int)
     parser.add_argument('--epochs', default=35, type=int, metavar='N', help='number of epochs')
     parser.add_argument('-j', '--workers', default=16, type=int, metavar='N', help='number of data loading workers')
     parser.add_argument('--lr', default=0.001, type=float, help='initial learning rate')
@@ -40,7 +40,7 @@ def parse_args():
 
 def evaluate(model, dataloader, device, num_classes):
     model.eval()
-    confmat = utils.ConfusionMatrix(num_classes)
+    confmat = ConfusionMatrix(num_classes)
     with torch.no_grad():
         for data in dataloader:
             feature, label, index = data['feature'].to(device), data['label'].to(device), data['index']
@@ -53,13 +53,13 @@ def evaluate(model, dataloader, device, num_classes):
 
 def main(args):
 
-    validation_split = .1
+    validation_split = .2
     shuffle_dataset = True
     random_seed= 42
     num_classes = 33
     grid_size = 256
 
-    dataset = FeaturesDataset(feat_dir='/home/josh94mur/data/features', label_dir='/home/josh94mur/data/targets/')
+    dataset = FeaturesDataset(feat_dir='./data/features', label_dir='./data/targets/')
     # dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
 
     # Creating data indices for training and validation splits:
@@ -75,8 +75,8 @@ def main(args):
     valid_sampler = SubsetRandomSampler(val_indices)
 
     train_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, 
-                                            sampler=train_sampler)
-    validation_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
+                                                sampler=train_sampler)
+    valid_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
                                                 sampler=valid_sampler)
     # for i_batch, sample_batched in enumerate(train_loader):
     #     print(i_batch, sample_batched['feature'].size(), sample_batched['label'].size())
@@ -88,9 +88,16 @@ def main(args):
         model.to(device)
         checkpoint = torch.load(args.pretrained, map_location='cpu')
         model.load_state_dict(checkpoint)
-        confmat = evaluate(model, validation_loader, device=device, num_classes=num_classes)
+        model.eval()
+        with torch.no_grad():
+            for i, data in enumerate(valid_loader):
+                feature, label, index = data['feature'].to(device), data['label'].to(device), data['index']
+                output = model(feature)
+                output = output.argmax(1)
+                visual2d(output.cpu()[0], index[0]) 
+        confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
         print(confmat)
-        print("Finished Testing!")
+        # print("Finished Testing!")
         return
     else:
         model = Seg_Head()
@@ -125,8 +132,8 @@ def main(args):
 
                     tepoch.set_postfix(loss=loss.item())
                     sleep(0.01)
-            confmat = evaluate(model, validation_loader, device=device, num_classes=num_classes)
-            print(confmat)
+            # confmat = evaluate(model, validation_loader, device=device, num_classes=num_classes)
+            # print(confmat)
             #print(f'accuracy={confmat.acc_global}, mean_IoU={confmat.mean_IoU}')
 
         PATH = './seg_head.pth'
