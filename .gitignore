@@ -3,10 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
+# extensions
 *.so
 *.pth
-
+*.onnx
 # Distribution / packaging
 .Python
 build/
