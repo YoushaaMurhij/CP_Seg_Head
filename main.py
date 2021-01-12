@@ -26,8 +26,8 @@ from time import sleep
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
     parser.add_argument('--device', default='cuda:0', help='device')
-    parser.add_argument('-b', '--batch-size', default=1, type=int)
-    parser.add_argument('--epochs', default=35, type=int, metavar='N', help='number of epochs')
+    parser.add_argument('-b', '--batch-size', default=128, type=int)
+    parser.add_argument('--epochs', default=30, type=int, metavar='N', help='number of epochs')
     parser.add_argument('-j', '--workers', default=16, type=int, metavar='N', help='number of data loading workers')
     parser.add_argument('--lr', default=0.001, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
@@ -47,7 +47,7 @@ def evaluate(model, dataloader, device, num_classes):
             output = model(feature)
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
-            visual2d(output.cpu()[0], index[0])  
+            #visual2d(output.cpu()[0], index[0])  
         confmat.reduce_from_all_processes()
     return confmat
 
@@ -132,9 +132,9 @@ def main(args):
 
                     tepoch.set_postfix(loss=loss.item())
                     sleep(0.01)
-            # confmat = evaluate(model, validation_loader, device=device, num_classes=num_classes)
-            # print(confmat)
-            #print(f'accuracy={confmat.acc_global}, mean_IoU={confmat.mean_IoU}')
+            confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
+            #print(confmat)
+            print(f'accuracy={confmat.acc_global}, mean_IoU={confmat.mean_IoU}')
 
         PATH = './seg_head.pth'
         torch.save(model.state_dict(), PATH)
