@@ -22,6 +22,7 @@ from tqdm import tqdm
 from matplotlib import pyplot as plt
 import numpy as np
 from time import sleep
+from torch.utils.tensorboard import SummaryWriter
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
@@ -34,6 +35,7 @@ def parse_args():
     parser.add_argument('--resume', default='', help='resume from checkpoint', action="store_true")
     parser.add_argument("--test-only", dest="test_only", help="Only test the model", action="store_true")
     parser.add_argument("--pretrained", default="seg_head.pth", help="Use pre-trained models")
+    parser.add_argument('--save_dir', default='./data/logs', help='path where to save output models and logs')
 
     args = parser.parse_args()
     return args
@@ -58,6 +60,8 @@ def main(args):
     random_seed= 42
     num_classes = 33
     grid_size = 256
+
+    writer = SummaryWriter(args.save_dir)
 
     dataset = FeaturesDataset(feat_dir='./data/features', label_dir='./data/targets/')
     # dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
@@ -115,7 +119,7 @@ def main(args):
         for epoch in range(num_epochs):
               
             with tqdm(train_loader, unit = "batch") as tepoch:
-                for data in tepoch:
+                for i, data in enumerate(tepoch):
                     tepoch.set_description(f"Epoch {epoch}")
 
                     features = data['feature']
@@ -131,12 +135,17 @@ def main(args):
                     optimizer.step()
 
                     tepoch.set_postfix(loss=loss.item())
+                    writer.add_scalar('training loss', loss.item(), epoch * len(train_loader) + i)
+                    writer.add_scalar('lr', optimizer.param_groups[0]["lr"], epoch * len(data_loader) + i)
                     sleep(0.01)
+
             confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
             #print(confmat)
-            print(f'accuracy={confmat.acc_global}, mean_IoU={confmat.mean_IoU}')
-
-        PATH = './seg_head.pth'
+            #print(f'accuracy={confmat.acc_global}, mean_IoU={confmat.mean_IoU}')
+            for classname, iu in iou.items():
+                writer.add_scalar(f'{classname} IoU', iu, current_epoch)
+                
+        PATH = args.save_dir+'/seg_head.pth'
         torch.save(model.state_dict(), PATH)
         print('Finished Training. Model Saved!')
 
