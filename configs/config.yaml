@@ -1,0 +1,12 @@
+
+# config.yaml file
+
+batch-size: 128
+epochs: 35
+workers: 16
+lr: 0.001
+momentum: 0.9
+val_split: 0.2
+seed: 42
+num_classes: 33
+grid_size: 256

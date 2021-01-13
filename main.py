@@ -23,6 +23,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from time import sleep
 from torch.utils.tensorboard import SummaryWriter
+import yaml
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
@@ -55,11 +56,16 @@ def evaluate(model, dataloader, device, num_classes):
 
 def main(args):
 
-    validation_split = .2
+    with open("configs/config.yaml", "r") as yamlfile:
+        cfg = yaml.load(yamlfile, Loader=yaml.FullLoader)
+        print("Config file Read successfully!")
+        print(data)
+
+    validation_split = cfg['val_split']
     shuffle_dataset = True
-    random_seed= 42
-    num_classes = 33
-    grid_size = 256
+    random_seed= cfg['seed']
+    num_classes = cfg['num_classes']
+    grid_size = cfg['grid_size']
 
     writer = SummaryWriter(args.save_dir)
 
@@ -112,10 +118,10 @@ def main(args):
             model.load_state_dict(checkpoint)
 
         criterion = FocalLoss(gamma=2, reduction='mean')
-        optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+        optimizer = optim.SGD(model.parameters(), lr=cfg['lr'], momentum=cfg['momentum'])
 
         model.train()
-        num_epochs = args.epochs 
+        num_epochs = cfg['epochs'] 
         for epoch in range(num_epochs):
               
             with tqdm(train_loader, unit = "batch") as tepoch:
@@ -144,7 +150,7 @@ def main(args):
             #print(f'accuracy={confmat.acc_global}, mean_IoU={confmat.mean_IoU}')
             for classname, iu in iou.items():
                 writer.add_scalar(f'{classname} IoU', iu, current_epoch)
-                
+
         PATH = args.save_dir+'/seg_head.pth'
         torch.save(model.state_dict(), PATH)
         print('Finished Training. Model Saved!')
@@ -153,8 +159,11 @@ if __name__=="__main__":
     args = parse_args()
     main(args)
 
-# TODO : add tensorboard support && config
+# TODO : add config
 # TODO : add Parallel training support
 # TODO : move to pytrorch lighting!
-# TODO : add accuracey metric (from sem seg)
 # TODO : fix gpu_id == 1 :)
+
+
+
+
