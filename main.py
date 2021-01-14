@@ -28,15 +28,10 @@ import yaml
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
     parser.add_argument('--device', default='cuda:0', help='device')
-    parser.add_argument('-b', '--batch-size', default=128, type=int)
-    parser.add_argument('--epochs', default=30, type=int, metavar='N', help='number of epochs')
-    parser.add_argument('-j', '--workers', default=16, type=int, metavar='N', help='number of data loading workers')
-    parser.add_argument('--lr', default=0.001, type=float, help='initial learning rate')
-    parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
     parser.add_argument('--resume', default='', help='resume from checkpoint', action="store_true")
     parser.add_argument("--test-only", dest="test_only", help="Only test the model", action="store_true")
     parser.add_argument("--pretrained", default="seg_head.pth", help="Use pre-trained models")
-    parser.add_argument('--save_dir', default='./data/logs', help='path where to save output models and logs')
+    parser.add_argument('--save_dir', default='./logs', help='path where to save output models and logs')
 
     args = parser.parse_args()
     return args
@@ -50,7 +45,6 @@ def evaluate(model, dataloader, device, num_classes):
             output = model(feature)
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
-            #visual2d(output.cpu()[0], index[0])  
         confmat.reduce_from_all_processes()
     return confmat
 
@@ -59,7 +53,9 @@ def main(args):
     with open("configs/config.yaml", "r") as yamlfile:
         cfg = yaml.load(yamlfile, Loader=yaml.FullLoader)
         print("Config file Read successfully!")
-        print(data)
+        print(cfg)
+        print("-----------------------------------------")
+        print("Use : tensorboard --logdir logs ")
 
     validation_split = cfg['val_split']
     shuffle_dataset = True
@@ -84,9 +80,9 @@ def main(args):
     train_sampler = SubsetRandomSampler(train_indices)
     valid_sampler = SubsetRandomSampler(val_indices)
 
-    train_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, 
+    train_loader = torch.utils.data.DataLoader(dataset, batch_size=cfg['batch_size'], 
                                                 sampler=train_sampler)
-    valid_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
+    valid_loader = torch.utils.data.DataLoader(dataset, batch_size=cfg['batch_size'],
                                                 sampler=valid_sampler)
     # for i_batch, sample_batched in enumerate(train_loader):
     #     print(i_batch, sample_batched['feature'].size(), sample_batched['label'].size())
@@ -107,7 +103,7 @@ def main(args):
                 visual2d(output.cpu()[0], index[0]) 
         confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
         print(confmat)
-        # print("Finished Testing!")
+        print("Finished Testing!")
         return
     else:
         model = Seg_Head()
@@ -141,17 +137,16 @@ def main(args):
                     optimizer.step()
 
                     tepoch.set_postfix(loss=loss.item())
-                    writer.add_scalar('training loss', loss.item(), epoch * len(train_loader) + i)
-                    writer.add_scalar('lr', optimizer.param_groups[0]["lr"], epoch * len(data_loader) + i)
+                    writer.add_scalar('Training Loss', loss.item(), epoch * len(train_loader) + i)
+                    writer.add_scalar('Learning rate', optimizer.param_groups[0]["lr"], epoch * len(train_loader) + i)
                     sleep(0.01)
 
             confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
-            #print(confmat)
-            #print(f'accuracy={confmat.acc_global}, mean_IoU={confmat.mean_IoU}')
-            for classname, iu in iou.items():
-                writer.add_scalar(f'{classname} IoU', iu, current_epoch)
 
-        PATH = args.save_dir+'/seg_head.pth'
+            writer.add_scalar(f'accuracy', confmat.acc_global, epoch)
+            writer.add_scalar(f'mean_IoU', confmat.mean_IoU, epoch)
+
+        PATH = 'seg_head.pth'
         torch.save(model.state_dict(), PATH)
         print('Finished Training. Model Saved!')
 
@@ -159,7 +154,6 @@ if __name__=="__main__":
     args = parse_args()
     main(args)
 
-# TODO : add config
 # TODO : add Parallel training support
 # TODO : move to pytrorch lighting!
 # TODO : fix gpu_id == 1 :)

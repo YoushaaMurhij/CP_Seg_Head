@@ -1,8 +1,8 @@
 
 # config.yaml file
 
-batch-size: 128
-epochs: 35
+batch_size: 2
+epochs: 30
 workers: 16
 lr: 0.001
 momentum: 0.9
