@@ -22,7 +22,7 @@ def main():
     pos_offset = 51.2 
     pc_width = 51.2 * 2
     num_classes = 33 
-    save_png = True
+    save_png = False
 
     if len(sys.argv) < 3:
         logging.error('Enter a lidar bin folder[1] path and label folder[2] path!')
@@ -45,7 +45,7 @@ def main():
                 continue
             seg_grid[int((pt[0] + pos_offset) * grid_size / pc_width - 1), int((pt[1] + pos_offset) * grid_size / pc_width - 1), class2id[lb]] += 1  
         fin_grid = np.argmax(seg_grid, axis=2)
-        np.savetxt(lbl[:6]+'.txt', fin_grid,  fmt='%d' , delimiter=',')
+        np.savetxt('00'+str(int(lbl[:6])+4541)+'.txt', fin_grid,  fmt='%d' , delimiter=',')
 
         if save_png:
             plt.figure()

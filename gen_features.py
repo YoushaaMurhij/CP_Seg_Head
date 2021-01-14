@@ -1,10 +1,7 @@
 import sys
 import time
-
 import numpy as np
-import open3d as o3d # need to be imported befor torch
 import torch
-#from loguru import logger as logging
 import logging
 from det3d.core.input.voxel_generator import VoxelGenerator
 from det3d.models import build_detector
@@ -56,25 +53,10 @@ class CenterPointDetector(object):
         cloud = np.hstack((cloud, np.zeros([cloud.shape[0], 1])))
         return cloud
 
-    def load_cloud_from_my_file(seld, pc_f):
-        logging.info('loading cloud from: {}'.format(pc_f))
-        ins = open(pc_f, "r" )
-        num_features = 4
-        data = []
-        for line in ins:
-            number_strings = line.split() # Split the line on runs of whitespace
-            numbers = [float(n) for n in number_strings] # Convert to integers
-            data.append(numbers) 
-        cloud = np.array(data,dtype=np.float32).reshape([-1, num_features])
-        cloud = np.hstack((cloud, np.zeros([cloud.shape[0], 1])))
-        return cloud
-
     def predict_on_local_file(self, cloud_file, i, f):
 
         # load sample from file
-        #self.points = self.load_cloud_from_nuscenes_file(cloud_file)
         self.points = self.load_cloud_from_deecamp_file(cloud_file)
-        #self.points = self.load_cloud_from_my_file(cloud_file)
 
         # prepare input
         voxels, coords, num_points = self.voxel_generator.generate(self.points)
@@ -101,23 +83,8 @@ class CenterPointDetector(object):
         with torch.no_grad():
             outputs = self.net(self.inputs, return_loss=False)  #[0]
 
-        #print(outputs.shape)
         torch.save(outputs[0], f+'.pt')
-        # features = outputs.detach().cpu().numpy()
-        # np.savetxt(f, features, newline=" ")
 
-        torch.cuda.synchronize()
-        logging.info("Prediction time: {:.3f} s".format(time.time() - tic))
-
-        # for k, v in outputs.items():
-        #     if k not in [
-        #         "metadata",
-        #     ]:
-        #         outputs[k] = v.to('cpu')
-
-        # visualization
-        #print(outputs)
-        #visual(i, np.transpose(self.points), outputs, conf_th=0.5, show_plot=False, show_3D=False)
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         logging.error('Input a lidar bin folder pls.')
@@ -127,12 +94,10 @@ if __name__ == "__main__":
         onlyfiles.sort()
         config_file = 'configs/centerpoint/nusc_centerpoint_pp_02voxel_circle_nms_demo.py'
         model_file = 'work_dirs/centerpoint_pp_512_circle_nms_tracking/last1.pth'
-        #config_file = 'configs/centerpoint/nusc_centerpoint_voxelnet_dcn_0075voxel_flip_circle_nms.py'
-        #model_file = 'work_dirs/centerpoint_voxel_1440_dcn_flip_circle_nms/latest.pth'
         detector = CenterPointDetector(config_file, model_file)
         for i, f in enumerate(onlyfiles):
             print(f)
-            detector.predict_on_local_file(mypath+"/"+f, i, f)
+            detector.predict_on_local_file(mypath+"/"+f, i, '00'+str(int(f[:6])+4541))
 
 
 #/datasets/KITTI_Odometry/dataset/sequences/00/velodyne
