@@ -65,7 +65,7 @@ def main(args):
 
     writer = SummaryWriter(args.save_dir)
 
-    dataset = FeaturesDataset(feat_dir='./data/features', label_dir='./data/targets/')
+    dataset = FeaturesDataset(feat_dir='/home/josh94mur/data/features', label_dir='/home/josh94mur/data/targets/')
     # dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
 
     # Creating data indices for training and validation splits:
@@ -156,7 +156,7 @@ if __name__=="__main__":
 
 # TODO : add Parallel training support
 # TODO : move to pytrorch lighting!
-# TODO : fix gpu_id == 1 :)
+# TODO : fix gpu_id == 1 :)   changing lr + model graph 
 
 
 
