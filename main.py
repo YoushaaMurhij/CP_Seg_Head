@@ -88,6 +88,7 @@ def main(args):
     #     print(i_batch, sample_batched['feature'].size(), sample_batched['label'].size())
     
     device = torch.device(args.device)
+    print(f'cuda device is: {device}')
 
     if args.test_only:
         model = Seg_Head()
@@ -146,7 +147,7 @@ def main(args):
             writer.add_scalar(f'accuracy', confmat.acc_global, epoch)
             writer.add_scalar(f'mean_IoU', confmat.mean_IoU, epoch)
 
-        PATH = 'seg_head.pth'
+        PATH = 'seg_head1.pth'
         torch.save(model.state_dict(), PATH)
         print('Finished Training. Model Saved!')
 

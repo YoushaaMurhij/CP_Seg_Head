@@ -2,9 +2,9 @@
 # config.yaml file
 
 batch_size: 128
-epochs: 40
+epochs: 3
 workers: 16
-lr: 0.0005
+lr: 0.01
 momentum: 0.9
 val_split: 0.2
 seed: 42

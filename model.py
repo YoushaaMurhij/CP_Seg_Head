@@ -12,7 +12,7 @@ class Seg_Head(nn.Module):
         super(Seg_Head, self).__init__()
         
         self.input_size = 384
-        self.mid_layer = 128
+        self.mid_layer = 256
         self.output_size = 33
         self.kernel_size = 1
 
@@ -24,21 +24,34 @@ class Seg_Head(nn.Module):
             nn.BatchNorm2d(self.mid_layer//2),
             nn.ReLU(inplace=True)
         )
-
-        #self.up = nn.ConvTranspose2d(self.mid_layer//2, self.mid_layer//4, 2, stride=2, padding=0)
-
         self.conv_head2 = nn.Sequential(
             nn.Conv2d(self.mid_layer//2, self.mid_layer//4, kernel_size=self.kernel_size, padding=0, bias=True),
             nn.BatchNorm2d(self.mid_layer//4),
             nn.ReLU(inplace=True),
-            nn.Conv2d(self.mid_layer//4, self.output_size, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.Conv2d(self.mid_layer//4, self.mid_layer//8, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(self.mid_layer//8),
+            nn.ReLU(inplace=True)
+        )
+
+        #self.up = nn.ConvTranspose2d(self.mid_layer//2, self.mid_layer//4, 2, stride=2, padding=0)
+
+        self.conv_head3 = nn.Sequential(
+            # nn.Conv2d(self.mid_layer//8, self.mid_layer//8, kernel_size=self.kernel_size, padding=0, bias=True),
+            # nn.BatchNorm2d(self.mid_layer//4),
+            # nn.ReLU(inplace=True),
+            nn.Conv2d(self.mid_layer//8, self.output_size, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
         )
 
     def forward(self, x):
+        #print(x.shape) 
         x = self.conv_head1(x)
-        #x = self.up(x)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)     
+        #x = self.up(x)    
+        #print(x.shape) 
         x = self.conv_head2(x)
+        #print(x.shape)
+        x = self.conv_head3(x)
+        #print(x.shape)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
         #print(x.shape)
         return x
 
