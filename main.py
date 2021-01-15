@@ -40,11 +40,12 @@ def evaluate(model, dataloader, device, num_classes):
     model.eval()
     confmat = ConfusionMatrix(num_classes)
     with torch.no_grad():
-        for data in dataloader:
+        for i, data in enumerate(dataloader):
             feature, label, index = data['feature'].to(device), data['label'].to(device), data['index']
             output = model(feature)
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
+            visual2d(output.cpu()[0], index[0]) 
         confmat.reduce_from_all_processes()
     return confmat
 
@@ -54,8 +55,6 @@ def main(args):
         cfg = yaml.load(yamlfile, Loader=yaml.FullLoader)
         print("Config file Read successfully!")
         print(cfg)
-        print("-----------------------------------------")
-        print("Use : tensorboard --logdir logs ")
 
     validation_split = cfg['val_split']
     shuffle_dataset = True
@@ -91,22 +90,19 @@ def main(args):
     print(f'cuda device is: {device}')
 
     if args.test_only:
+        print("-----------------------------------------")
+        print("Use : tensorboard --logdir logs/eval_data ")
         model = Seg_Head()
         model.to(device)
         checkpoint = torch.load(args.pretrained, map_location='cpu')
         model.load_state_dict(checkpoint)
-        model.eval()
-        with torch.no_grad():
-            for i, data in enumerate(valid_loader):
-                feature, label, index = data['feature'].to(device), data['label'].to(device), data['index']
-                output = model(feature)
-                output = output.argmax(1)
-                visual2d(output.cpu()[0], index[0]) 
-        # confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
-        # print(confmat)
+        confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
+        print(confmat)
         print("Finished Testing!")
         return
     else:
+        print("-----------------------------------------")
+        print("Use : tensorboard --logdir logs ")
         model = Seg_Head()
         model.to(device)
 
