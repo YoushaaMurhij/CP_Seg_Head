@@ -36,7 +36,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def evaluate(model, dataloader, device, num_classes):
+def evaluate(model, dataloader, device, num_classes, writer):
     model.eval()
     confmat = ConfusionMatrix(num_classes)
     with torch.no_grad():
@@ -46,9 +46,8 @@ def evaluate(model, dataloader, device, num_classes):
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
             visual2d(output.cpu()[0], index[0])
-            img_grid = torchvision.utils.make_grid(output)
+            img_grid = torch.reshape(output[0], (1 , 256, 256))
             writer.add_image('Evaluattion point cloud grids:', img_grid)
- 
         confmat.reduce_from_all_processes()
     return confmat
 
@@ -58,6 +57,9 @@ def main(args):
         cfg = yaml.load(yamlfile, Loader=yaml.FullLoader)
         print("Config file Read successfully!")
         print(cfg)
+    
+    print("------------------------------------------")
+    print("Use : tensorboard --logdir logs/train_data")
 
     num_epochs = cfg['epochs'] 
     validation_split = cfg['val_split']
@@ -98,26 +100,22 @@ def main(args):
     print(f'cuda device is: {device}')
 
     if args.test_only:
-        print("-----------------------------------------")
-        print("Use : tensorboard --logdir logs/eval_data")
         model = Seg_Head()
         model.to(device)
         checkpoint = torch.load(args.pretrained, map_location='cpu')
         model.load_state_dict(checkpoint)
-        confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
+        confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, writer=writer)
         print(confmat)
         print("Finished Testing!")
         return
     else:
-        print("------------------------------------------")
-        print("Use : tensorboard --logdir logs/train_data")
         model = Seg_Head()
         model.to(device)
 
         if args.resume:
             checkpoint = torch.load(args.pretrained, map_location='cpu')
             model.load_state_dict(checkpoint)
-        writer.add_graph(model, torch.randn(1, 384, 128, 128, requires_grad=True))
+        writer.add_graph(model, torch.randn(1, 384, 128, 128, requires_grad=True).cuda())
 
         criterion = FocalLoss(gamma=2, reduction='mean')
         optimizer = optim.SGD(model.parameters(), weight_decay = weight_decay, lr=learning_rate, momentum=momentum)
@@ -144,10 +142,10 @@ def main(args):
 
                     tepoch.set_postfix(loss=loss.item())
                     writer.add_scalar('Training Loss', loss.item(), epoch * len(train_loader) + i)
-                    writer.add_scalar('Learning rate', scheduler.get_lr(), epoch * len(train_loader) + i)
+                    writer.add_scalar('Learning rate', optimizer.param_groups[0]["lr"], epoch * len(train_loader) + i)
                     sleep(0.01)
 
-            confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
+            confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, writer=writer)
 
             writer.add_scalar(f'accuracy', confmat.acc_global, epoch)
             writer.add_scalar(f'mean_IoU', confmat.mean_IoU, epoch)
@@ -164,4 +162,4 @@ if __name__=="__main__":
 
 # TODO : add Parallel training support
 # TODO : move to pytrorch lighting!
-# TODO : fix gpu_id == 1 :) + model graph
+# TODO : fix gpu_id == 1 :)
