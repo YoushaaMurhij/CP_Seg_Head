@@ -102,8 +102,8 @@ def main(args):
                 output = model(feature)
                 output = output.argmax(1)
                 visual2d(output.cpu()[0], index[0]) 
-        confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
-        print(confmat)
+        # confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
+        # print(confmat)
         print("Finished Testing!")
         return
     else:
