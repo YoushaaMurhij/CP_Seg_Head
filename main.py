@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument('--resume', default='', help='resume from checkpoint', action="store_true")
     parser.add_argument("--test-only", dest="test_only", help="Only test the model", action="store_true")
     parser.add_argument("--pretrained", default="seg_head.pth", help="Use pre-trained models")
-    parser.add_argument('--save_dir', default='./logs', help='path where to save output models and logs')
+    parser.add_argument('--save_dir', default='./logs/train_data/', help='path where to save output models and logs')
 
     args = parser.parse_args()
     return args
@@ -45,7 +45,10 @@ def evaluate(model, dataloader, device, num_classes):
             output = model(feature)
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
-            visual2d(output.cpu()[0], index[0]) 
+            visual2d(output.cpu()[0], index[0])
+            img_grid = torchvision.utils.make_grid(output)
+            writer.add_image('Evaluattion point cloud grids:', img_grid)
+ 
         confmat.reduce_from_all_processes()
     return confmat
 
@@ -56,16 +59,21 @@ def main(args):
         print("Config file Read successfully!")
         print(cfg)
 
+    num_epochs = cfg['epochs'] 
     validation_split = cfg['val_split']
     shuffle_dataset = True
-    random_seed= cfg['seed']
+    random_seed = cfg['seed']
     num_classes = cfg['num_classes']
     grid_size = cfg['grid_size']
+    learning_rate = cfg['lr']
+    batch_size = cfg['batch_size']
+    momentum = cfg['momentum']
+    weight_decay = cfg['weight_decay']
 
     writer = SummaryWriter(args.save_dir)
 
     dataset = FeaturesDataset(feat_dir='/home/josh94mur/data/features', label_dir='/home/josh94mur/data/targets/')
-    # dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
+    # dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=args.workers)
 
     # Creating data indices for training and validation splits:
     dataset_size = len(dataset)
@@ -79,9 +87,9 @@ def main(args):
     train_sampler = SubsetRandomSampler(train_indices)
     valid_sampler = SubsetRandomSampler(val_indices)
 
-    train_loader = torch.utils.data.DataLoader(dataset, batch_size=cfg['batch_size'], 
+    train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                                 sampler=train_sampler)
-    valid_loader = torch.utils.data.DataLoader(dataset, batch_size=cfg['batch_size'],
+    valid_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size // 8,
                                                 sampler=valid_sampler)
     # for i_batch, sample_batched in enumerate(train_loader):
     #     print(i_batch, sample_batched['feature'].size(), sample_batched['label'].size())
@@ -91,7 +99,7 @@ def main(args):
 
     if args.test_only:
         print("-----------------------------------------")
-        print("Use : tensorboard --logdir logs/eval_data ")
+        print("Use : tensorboard --logdir logs/eval_data")
         model = Seg_Head()
         model.to(device)
         checkpoint = torch.load(args.pretrained, map_location='cpu')
@@ -101,20 +109,21 @@ def main(args):
         print("Finished Testing!")
         return
     else:
-        print("-----------------------------------------")
-        print("Use : tensorboard --logdir logs ")
+        print("------------------------------------------")
+        print("Use : tensorboard --logdir logs/train_data")
         model = Seg_Head()
         model.to(device)
 
         if args.resume:
             checkpoint = torch.load(args.pretrained, map_location='cpu')
             model.load_state_dict(checkpoint)
+        writer.add_graph(model, torch.randn(1, 384, 128, 128, requires_grad=True))
 
         criterion = FocalLoss(gamma=2, reduction='mean')
-        optimizer = optim.SGD(model.parameters(), lr=cfg['lr'], momentum=cfg['momentum'])
+        optimizer = optim.SGD(model.parameters(), weight_decay = weight_decay, lr=learning_rate, momentum=momentum)
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader), eta_min=learning_rate)
 
         model.train()
-        num_epochs = cfg['epochs'] 
         for epoch in range(num_epochs):
               
             with tqdm(train_loader, unit = "batch") as tepoch:
@@ -131,11 +140,11 @@ def main(args):
 
                     loss = criterion(outputs, labels)
                     loss.backward()
-                    optimizer.step()
+                    scheduler.step()
 
                     tepoch.set_postfix(loss=loss.item())
                     writer.add_scalar('Training Loss', loss.item(), epoch * len(train_loader) + i)
-                    writer.add_scalar('Learning rate', optimizer.param_groups[0]["lr"], epoch * len(train_loader) + i)
+                    writer.add_scalar('Learning rate', scheduler.get_lr(), epoch * len(train_loader) + i)
                     sleep(0.01)
 
             confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes)
@@ -143,9 +152,11 @@ def main(args):
             writer.add_scalar(f'accuracy', confmat.acc_global, epoch)
             writer.add_scalar(f'mean_IoU', confmat.mean_IoU, epoch)
 
-        PATH = 'seg_head1.pth'
+        PATH = args.save_dir + datetime.now().strftime("%Y%m%d-%H%M%S") +'/seg_head.pth'
         torch.save(model.state_dict(), PATH)
         print('Finished Training. Model Saved!')
+        writer.close()
+
 
 if __name__=="__main__":
     args = parse_args()
@@ -153,8 +164,4 @@ if __name__=="__main__":
 
 # TODO : add Parallel training support
 # TODO : move to pytrorch lighting!
-# TODO : fix gpu_id == 1 :)   changing lr + model graph 
-
-
-
-
+# TODO : fix gpu_id == 1 :) + model graph
