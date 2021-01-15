@@ -11,7 +11,6 @@ def visual2d(grid, index):
     plt.figure() #TODO add colors
     plt.imshow(grid, interpolation='bilinear')
     plt.savefig('logs/figs/'+str(index)+'.png')
-    print('Image '+str(index)+'.png saved!')
     plt.clf()
     plt.close()
 
@@ -27,6 +26,7 @@ def main():
         label_name = os.path.join(lbl_path,label)
         grid = np.loadtxt(label_name, dtype=int, delimiter=',')
         visual2d(grid, index)
+        print('Image '+str(index)+'.png saved!')
 
 if __name__ == "__main__":
     main()

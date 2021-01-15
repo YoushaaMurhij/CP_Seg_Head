@@ -115,7 +115,7 @@ def main(args):
         if args.resume:
             checkpoint = torch.load(args.pretrained, map_location='cpu')
             model.load_state_dict(checkpoint)
-        writer.add_graph(model, torch.randn(1, 384, 128, 128, requires_grad=True).cuda())
+        writer.add_graph(model, torch.randn(1, 384, 128, 128, requires_grad=False).cuda())
 
         criterion = FocalLoss(gamma=2, reduction='mean')
         optimizer = optim.SGD(model.parameters(), weight_decay = weight_decay, lr=learning_rate, momentum=momentum)
@@ -138,11 +138,12 @@ def main(args):
 
                     loss = criterion(outputs, labels)
                     loss.backward()
+                    optimizer.step()
                     scheduler.step()
 
                     tepoch.set_postfix(loss=loss.item())
                     writer.add_scalar('Training Loss', loss.item(), epoch * len(train_loader) + i)
-                    writer.add_scalar('Learning rate', optimizer.param_groups[0]["lr"], epoch * len(train_loader) + i)
+                    writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], epoch * len(train_loader) + i) 
                     sleep(0.01)
 
             confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, writer=writer)
@@ -150,7 +151,7 @@ def main(args):
             writer.add_scalar(f'accuracy', confmat.acc_global, epoch)
             writer.add_scalar(f'mean_IoU', confmat.mean_IoU, epoch)
 
-        PATH = args.save_dir + datetime.now().strftime("%Y%m%d-%H%M%S") +'/seg_head.pth'
+        PATH = args.save_dir +'/seg_head.pth'
         torch.save(model.state_dict(), PATH)
         print('Finished Training. Model Saved!')
         writer.close()
@@ -162,4 +163,4 @@ if __name__=="__main__":
 
 # TODO : add Parallel training support
 # TODO : move to pytrorch lighting!
-# TODO : fix gpu_id == 1 :)
+# TODO : fix gpu_id == 1 :) + remove some classes + 
