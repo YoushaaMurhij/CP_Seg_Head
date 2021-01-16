@@ -45,9 +45,9 @@ def evaluate(model, dataloader, device, num_classes, writer):
             output = model(feature)
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
-            visual2d(output.cpu()[0], index[0])
-            img_grid = torch.reshape(output[0], (1 , 256, 256))
-            writer.add_image('Evaluattion point cloud grids:', img_grid)
+            visual2d(output.cpu()[0], index[0], writer)
+            img_grid = torch.reshape(output, (dataloader.batchsize, 1 , 256, 256))
+            writer.add_image('Evaluattion point cloud grids:', img_grid, dataformats='NCHW')
         confmat.reduce_from_all_processes()
     return confmat
 
