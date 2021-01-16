@@ -61,9 +61,9 @@ def main(args):
     
     now = datetime.now()
     save_str = '.'+args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S")
-    print("---------------------------------------------------------------")
-    print("Use : tensorboard --logdir " + save_str)
-    print("---------------------------------------------------------------")
+    print("------------------------------------------")
+    print("Use : tensorboard --logdir logs/train_data")
+    print("------------------------------------------")
 
     num_epochs = cfg['epochs'] 
     validation_split = cfg['val_split']
@@ -103,8 +103,7 @@ def main(args):
     device = torch.device(args.device)
     print(f'cuda device is: {device}')
 
-    model = Seg_Head()
-    model.to(device)
+    model = Seg_Head().to(device)
 
     if args.test_only:
         checkpoint = torch.load(args.pretrained, map_location='cpu')
@@ -118,11 +117,13 @@ def main(args):
         if args.resume:
             checkpoint = torch.load(args.pretrained, map_location='cpu')
             model.load_state_dict(checkpoint)
-        writer.add_graph(model, torch.randn(1, 384, 128, 128, requires_grad=False).cuda())
+        writer.add_graph(model, torch.randn(1, 384, 128, 128, requires_grad=False).to(device))
 
         criterion = FocalLoss(gamma=2, reduction='mean')
         optimizer = optim.SGD(model.parameters(), weight_decay = weight_decay, lr=learning_rate, momentum=momentum)
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader), eta_min=learning_rate)
+        #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader), eta_min=learning_rate)
+        scheduler = optim.lr_scheduler.LambdaLR(optimizer,
+                                                     lambda x: (1 - x / (len(train_loader) * num_epochs)) ** 0.9)
 
         model.train()
         for epoch in range(num_epochs):
@@ -146,7 +147,7 @@ def main(args):
 
                     tepoch.set_postfix(loss=loss.item())
                     writer.add_scalar('Training Loss', loss.item(), epoch * len(train_loader) + i)
-                    writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], epoch * len(train_loader) + i) 
+                    writer.add_scalar('Learning rate', scheduler.get_lr()[0], epoch * len(train_loader) + i) #optimizer.param_groups[0]['lr']
                     sleep(0.01)
 
             confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, writer=writer)
@@ -165,9 +166,9 @@ if __name__=="__main__":
     main(args)
 
 # TODO : add Parallel training support
-# TODO : move to pytrorch lighting!
+# TODO : move to pytorch lighting!
 # TODO : fix gpu_id == 1 :) + remove some classes
-# TODO :
-# TODO :
+# TODO :  
+# TODO : compare with STD trainer params
 # TODO :
 # TODO :
