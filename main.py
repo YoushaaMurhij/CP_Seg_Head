@@ -147,7 +147,7 @@ def main(args):
 
                     tepoch.set_postfix(loss=loss.item())
                     writer.add_scalar('Training Loss', loss.item(), epoch * len(train_loader) + i)
-                    writer.add_scalar('Learning rate', scheduler.get_lr()[0], epoch * len(train_loader) + i) #optimizer.param_groups[0]['lr']
+                    writer.add_scalar('Learning rate', scheduler.get_last_lr()[0], epoch * len(train_loader) + i) #optimizer.param_groups[0]['lr']
                     sleep(0.01)
 
             confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, writer=writer)
