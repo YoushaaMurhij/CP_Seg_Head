@@ -24,6 +24,7 @@ import numpy as np
 from time import sleep
 from torch.utils.tensorboard import SummaryWriter
 import yaml
+from datetime import datetime
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Semantic Segmentation Head Training')
@@ -31,7 +32,7 @@ def parse_args():
     parser.add_argument('--resume', default='', help='resume from checkpoint', action="store_true")
     parser.add_argument("--test-only", dest="test_only", help="Only test the model", action="store_true")
     parser.add_argument("--pretrained", default="seg_head.pth", help="Use pre-trained models")
-    parser.add_argument('--save_dir', default='./logs/train_data/', help='path where to save output models and logs')
+    parser.add_argument('--save_dir', default='/logs/train_data/', help='path where to save output models and logs')
 
     args = parser.parse_args()
     return args
@@ -45,8 +46,8 @@ def evaluate(model, dataloader, device, num_classes, writer):
             output = model(feature)
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
-            visual2d(output.cpu()[0], index[0], writer)
-            img_grid = torch.reshape(output, (dataloader.batchsize, 1 , 256, 256))
+            visual2d(output.cpu()[0], index[0])
+            img_grid = torch.reshape(output, (-1, 1, 256, 256))
             writer.add_image('Evaluattion point cloud grids:', img_grid, dataformats='NCHW')
         confmat.reduce_from_all_processes()
     return confmat
@@ -58,8 +59,11 @@ def main(args):
         print("Config file Read successfully!")
         print(cfg)
     
-    print("------------------------------------------")
-    print("Use : tensorboard --logdir logs/train_data")
+    now = datetime.now()
+    save_str = '.'+args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S")
+    print("---------------------------------------------------------------")
+    print("Use : tensorboard --logdir " + save_str)
+    print("---------------------------------------------------------------")
 
     num_epochs = cfg['epochs'] 
     validation_split = cfg['val_split']
@@ -72,7 +76,7 @@ def main(args):
     momentum = cfg['momentum']
     weight_decay = cfg['weight_decay']
 
-    writer = SummaryWriter(args.save_dir)
+    writer = SummaryWriter(save_str)
 
     dataset = FeaturesDataset(feat_dir='/home/josh94mur/data/features', label_dir='/home/josh94mur/data/targets/')
     # dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=args.workers)
@@ -99,19 +103,18 @@ def main(args):
     device = torch.device(args.device)
     print(f'cuda device is: {device}')
 
+    model = Seg_Head()
+    model.to(device)
+
     if args.test_only:
-        model = Seg_Head()
-        model.to(device)
         checkpoint = torch.load(args.pretrained, map_location='cpu')
         model.load_state_dict(checkpoint)
         confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, writer=writer)
         print(confmat)
         print("Finished Testing!")
         return
-    else:
-        model = Seg_Head()
-        model.to(device)
 
+    else:
         if args.resume:
             checkpoint = torch.load(args.pretrained, map_location='cpu')
             model.load_state_dict(checkpoint)
@@ -151,7 +154,7 @@ def main(args):
             writer.add_scalar(f'accuracy', confmat.acc_global, epoch)
             writer.add_scalar(f'mean_IoU', confmat.mean_IoU, epoch)
 
-        PATH = args.save_dir +'/seg_head.pth'
+        PATH = save_str +'/seg_head.pth'
         torch.save(model.state_dict(), PATH)
         print('Finished Training. Model Saved!')
         writer.close()
@@ -163,4 +166,8 @@ if __name__=="__main__":
 
 # TODO : add Parallel training support
 # TODO : move to pytrorch lighting!
-# TODO : fix gpu_id == 1 :) + remove some classes + 
+# TODO : fix gpu_id == 1 :) + remove some classes
+# TODO :
+# TODO :
+# TODO :
+# TODO :
