@@ -14,7 +14,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 from dataset import FeaturesDataset
-from model import Seg_Head
+from model import Seg_Head, UNET
 from visualizer import visual2d
 from loss import FocalLoss
 from utils import *
@@ -103,7 +103,8 @@ def main(args):
     device = torch.device(args.device)
     print(f'cuda device is: {device}')
 
-    model = Seg_Head().to(device)
+    #model = Seg_Head().to(device)
+    model = UNET(384, 33).to(device)
 
     if args.test_only:
         checkpoint = torch.load(args.pretrained, map_location='cpu')
