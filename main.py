@@ -60,7 +60,8 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    save_str = '.'+args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S")
+    tag = " - Added 3 * conv_head + conv2d after interpolation!"
+    save_str = '.'+args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
     print("------------------------------------------")
@@ -69,6 +70,7 @@ def main(args):
     validation_split = cfg['val_split']
     shuffle_dataset = True
     random_seed = cfg['seed']
+    input_size = cfg['input_size']
     num_classes = cfg['num_classes']
     grid_size = cfg['grid_size']
     learning_rate = cfg['lr']
@@ -103,8 +105,8 @@ def main(args):
     device = torch.device(args.device)
     print(f'cuda device is: {device}')
 
-    #model = Seg_Head().to(device)
-    model = UNET(384, 33).to(device)
+    model = Seg_Head().to(device)
+    #model = UNET(input_size, num_classes).to(device)
 
     if args.test_only:
         checkpoint = torch.load(args.pretrained, map_location='cpu')
@@ -171,5 +173,5 @@ if __name__=="__main__":
 # TODO : fix gpu_id == 1 :) + remove some classes
 # TODO :  
 # TODO : compare with STD trainer params
-# TODO :
-# TODO :
+# TODO : expand the dataset !!!!!!!!!!!!
+# TODO : add tags to logs
