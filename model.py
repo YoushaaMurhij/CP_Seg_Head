@@ -141,11 +141,8 @@ class New_Head(nn.Module):
 
     def forward(self, x):
         x = self.conv_head1(x)
-        x = self.model(x)
+        x = self.model(x)['out']
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-
-        print(x.shape)
-
         return x
 
 def get_model():

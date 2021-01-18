@@ -14,7 +14,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 from dataset import FeaturesDataset
-from model import Seg_Head, UNET
+from model import Seg_Head, UNET, New_Head, get_model
 from visualizer import visual2d
 from loss import FocalLoss
 from utils import *
@@ -44,6 +44,10 @@ def evaluate(model, dataloader, device, num_classes, writer):
         for i, data in enumerate(dataloader):
             feature, label, index = data['feature'].to(device), data['label'].to(device), data['index']
             output = model(feature)
+
+            loss = criterion(output, label)
+            writer.add_scalar('Validation Loss', loss.item(), i)
+
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
             visual2d(output.cpu()[0], index[0])
@@ -60,7 +64,7 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " - UNet Arch!"
+    tag = " - Resnet50 Arch!"
     save_str = '.'+args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
@@ -105,8 +109,9 @@ def main(args):
     device = torch.device(args.device)
     print(f'cuda device is: {device}')
 
-    #model = Seg_Head().to(device)
-    model = UNET(input_size, num_classes).to(device)
+    # model = Seg_Head().to(device)
+    # model = UNET(input_size, num_classes).to(device)
+    model = get_model().to(device)
 
     if args.test_only:
         checkpoint = torch.load(args.pretrained, map_location='cpu')
