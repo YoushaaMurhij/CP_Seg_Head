@@ -37,7 +37,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def evaluate(model, dataloader, device, num_classes, writer):
+def evaluate(model, dataloader, device, num_classes, criterion=None, epoch=None, writer=None):
     model.eval()
     confmat = ConfusionMatrix(num_classes)
     with torch.no_grad():
@@ -45,8 +45,9 @@ def evaluate(model, dataloader, device, num_classes, writer):
             feature, label, index = data['feature'].to(device), data['label'].to(device), data['index']
             output = model(feature)
 
-            loss = criterion(output, label)
-            writer.add_scalar('Validation Loss', loss.item(), i)
+            if criterion is not None:
+                loss = criterion(output, label)
+                writer.add_scalar('Validation Loss', loss.item(), epoch * len(dataloader) + i)
 
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
@@ -64,7 +65,7 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " - Resnet50 Arch!"
+    tag = " - Resnet50 Arch + 2 * conv2d blocks!"
     save_str = '.'+args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
@@ -85,7 +86,6 @@ def main(args):
     writer = SummaryWriter(save_str)
 
     dataset = FeaturesDataset(feat_dir='/home/josh94mur/data/features', label_dir='/home/josh94mur/data/targets/')
-    # dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=args.workers)
 
     # Creating data indices for training and validation splits:
     dataset_size = len(dataset)
@@ -120,7 +120,6 @@ def main(args):
         print(confmat)
         print("Finished Testing!")
         return
-
     else:
         if args.resume:
             checkpoint = torch.load(args.pretrained, map_location='cpu')
@@ -129,9 +128,8 @@ def main(args):
 
         criterion = FocalLoss(gamma=2, reduction='mean')
         optimizer = optim.SGD(model.parameters(), weight_decay = weight_decay, lr=learning_rate, momentum=momentum)
-        #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader), eta_min=learning_rate)
-        scheduler = optim.lr_scheduler.LambdaLR(optimizer,
-                                                     lambda x: (1 - x / (len(train_loader) * num_epochs)) ** 0.9)
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader), eta_min=learning_rate)
+        #scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda x: (1 - x / (len(train_loader) * num_epochs)) ** 0.9)
 
         model.train()
         for epoch in range(num_epochs):
@@ -158,7 +156,7 @@ def main(args):
                     writer.add_scalar('Learning rate', scheduler.get_last_lr()[0], epoch * len(train_loader) + i) #optimizer.param_groups[0]['lr']
                     sleep(0.01)
 
-            confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, writer=writer)
+            confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, criterion=criterion, epoch=epoch, writer=writer)
 
             writer.add_scalar(f'accuracy', confmat.acc_global, epoch)
             writer.add_scalar(f'mean_IoU', confmat.mean_IoU, epoch)
@@ -167,7 +165,6 @@ def main(args):
         torch.save(model.state_dict(), PATH)
         print('Finished Training. Model Saved!')
         writer.close()
-
 
 if __name__=="__main__":
     args = parse_args()

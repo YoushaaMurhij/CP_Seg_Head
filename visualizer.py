@@ -11,8 +11,6 @@ def visual2d(grid, index, writer=None):
     plt.figure() #TODO add colors
     plt.imshow(grid, interpolation='bilinear')
     plt.savefig('logs/figs/'+str(index)+'.png')
-    # if writer is not None:
-    #     writer.add_figure('Matplotlib figures', plt.figure, global_step=None, close=True, walltime=None)
     plt.clf()
     plt.close()
 

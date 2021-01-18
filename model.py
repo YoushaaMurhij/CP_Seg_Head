@@ -126,14 +126,22 @@ class New_Head(nn.Module):
         super(New_Head, self).__init__()
         
         self.input_size = 384
-        self.mid_layer = 64
+        self.mid_layer = 128
         self.output_size = 3
         self.kernel_size = 1
         self.conv_head1 = nn.Sequential(
             nn.Conv2d(self.input_size, self.mid_layer, kernel_size=self.kernel_size, padding=0, bias=True),
             nn.BatchNorm2d(self.mid_layer),
             nn.ReLU(inplace=True),
-            nn.Conv2d(self.mid_layer, self.output_size, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.Conv2d(self.mid_layer, self.mid_layer//2, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(self.mid_layer//2),
+            nn.ReLU(inplace=True)
+        )
+        self.conv_head2 = nn.Sequential(
+            nn.Conv2d(self.mid_layer//2, self.mid_layer//4, kernel_size=self.kernel_size, padding=0, bias=True),
+            nn.BatchNorm2d(self.mid_layer//4),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(self.mid_layer//4, self.output_size, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
             nn.BatchNorm2d(self.output_size),
             nn.ReLU(inplace=True)
         )
@@ -141,6 +149,7 @@ class New_Head(nn.Module):
 
     def forward(self, x):
         x = self.conv_head1(x)
+        x = self.conv_head2(x)
         x = self.model(x)['out']
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
         return x
