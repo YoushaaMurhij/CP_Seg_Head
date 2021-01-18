@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import onnx
+import torchvision
 
 # input tensor [1, 384, 128, 128]
 
@@ -118,15 +119,49 @@ class UNET(nn.Module):
                             )
         return expand
 
-def main():
+class New_Head(nn.Module):
+    """Sematntic segmentation head"""
 
-    torch_model = Seg_Head()
+    def __init__(self, model):
+        super(New_Head, self).__init__()
+        
+        self.input_size = 384
+        self.mid_layer = 64
+        self.output_size = 3
+        self.kernel_size = 1
+        self.conv_head1 = nn.Sequential(
+            nn.Conv2d(self.input_size, self.mid_layer, kernel_size=self.kernel_size, padding=0, bias=True),
+            nn.BatchNorm2d(self.mid_layer),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(self.mid_layer, self.output_size, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(self.output_size),
+            nn.ReLU(inplace=True)
+        )
+        self.model = model
+
+    def forward(self, x):
+        x = self.conv_head1(x)
+        x = self.model(x)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+
+        print(x.shape)
+
+        return x
+
+def get_model():
+    resnet = torchvision.models.segmentation.fcn_resnet50(pretrained=False, progress=True, num_classes=33, aux_loss=None)
+    model = New_Head(resnet)
+    return model
+
+def main():
+    torch_model = get_model()
     x = torch.randn(1, 384, 128, 128, requires_grad=True)
-    torch.onnx.export(torch_model, x, "Seg_Head.onnx", export_params=True, opset_version=11,          
-                   do_constant_folding=True, input_names = ['input'], output_names = ['output'])
-    model = onnx.load("Seg_Head.onnx")
+    y = torch_model(x)
+    torch.onnx.export(torch_model, x, "New_Head.onnx", export_params=True, opset_version=11,          
+                   do_constant_folding=False, input_names = ['input'], output_names = ['output'])
+    model = onnx.load("New_Head.onnx")
     model_with_shapes = onnx.shape_inference.infer_shapes(model)
-    onnx.save(model_with_shapes, "Seg_Head_with_shapes.onnx")
+    onnx.save(model_with_shapes, "New_Head_with_shapes.onnx")
 
 if __name__ == "__main__":
     main()

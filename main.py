@@ -60,7 +60,7 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " - Added 3 * conv_head + conv2d after interpolation!"
+    tag = " - UNet Arch!"
     save_str = '.'+args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
@@ -105,8 +105,8 @@ def main(args):
     device = torch.device(args.device)
     print(f'cuda device is: {device}')
 
-    model = Seg_Head().to(device)
-    #model = UNET(input_size, num_classes).to(device)
+    #model = Seg_Head().to(device)
+    model = UNET(input_size, num_classes).to(device)
 
     if args.test_only:
         checkpoint = torch.load(args.pretrained, map_location='cpu')
@@ -173,5 +173,4 @@ if __name__=="__main__":
 # TODO : fix gpu_id == 1 :) + remove some classes
 # TODO :  
 # TODO : compare with STD trainer params
-# TODO : expand the dataset !!!!!!!!!!!!
-# TODO : add tags to logs
+# TODO : expand the dataset [03]
