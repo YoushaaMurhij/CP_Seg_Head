@@ -8,18 +8,15 @@
 """
 import argparse
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 from dataset import FeaturesDataset
 from model import Seg_Head, UNET, New_Head, get_model
 from visualizer import visual2d
-from loss import FocalLoss
+from loss import FocalLoss_
 from utils import *
 from tqdm import tqdm
-from matplotlib import pyplot as plt
 import numpy as np
 from time import sleep
 from torch.utils.tensorboard import SummaryWriter
@@ -65,8 +62,8 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " - Resnet50 Arch + 2 * conv2d blocks!"
-    save_str = '.'+args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
+    tag = " -  5 * conv2d + interpolation - 3 epoches!"
+    save_str = '.' + args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
     print("------------------------------------------")
@@ -85,7 +82,7 @@ def main(args):
 
     writer = SummaryWriter(save_str)
 
-    dataset = FeaturesDataset(feat_dir='/home/josh94mur/data/features', label_dir='/home/josh94mur/data/targets/')
+    dataset = FeaturesDataset(feat_dir='/home/josh94mur/data/features', label_dir='/home/josh94mur/data/targets/') 
 
     # Creating data indices for training and validation splits:
     dataset_size = len(dataset)
@@ -99,19 +96,15 @@ def main(args):
     train_sampler = SubsetRandomSampler(train_indices)
     valid_sampler = SubsetRandomSampler(val_indices)
 
-    train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
-                                                sampler=train_sampler)
-    valid_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size // 8,
-                                                sampler=valid_sampler)
-    # for i_batch, sample_batched in enumerate(train_loader):
-    #     print(i_batch, sample_batched['feature'].size(), sample_batched['label'].size())
+    train_loader = DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
+    valid_loader = DataLoader(dataset, batch_size=batch_size // 8, sampler=valid_sampler)
     
     device = torch.device(args.device)
     print(f'cuda device is: {device}')
 
-    # model = Seg_Head().to(device)
+    model = Seg_Head().to(device)
     # model = UNET(input_size, num_classes).to(device)
-    model = get_model().to(device)
+    #model = get_model().to(device)
 
     if args.test_only:
         checkpoint = torch.load(args.pretrained, map_location='cpu')
@@ -126,10 +119,10 @@ def main(args):
             model.load_state_dict(checkpoint)
         writer.add_graph(model, torch.randn(1, 384, 128, 128, requires_grad=False).to(device))
 
-        criterion = FocalLoss(gamma=2, reduction='mean')
+        criterion = FocalLoss_(gamma=2)
         optimizer = optim.SGD(model.parameters(), weight_decay = weight_decay, lr=learning_rate, momentum=momentum)
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader), eta_min=learning_rate)
-        #scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda x: (1 - x / (len(train_loader) * num_epochs)) ** 0.9)
+        #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader), eta_min=learning_rate)
+        scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda x: (1 - x / (len(train_loader) * num_epochs)) ** 0.8)
 
         model.train()
         for epoch in range(num_epochs):
@@ -161,9 +154,9 @@ def main(args):
             writer.add_scalar(f'accuracy', confmat.acc_global, epoch)
             writer.add_scalar(f'mean_IoU', confmat.mean_IoU, epoch)
 
-        PATH = save_str +'/seg_head.pth'
-        torch.save(model.state_dict(), PATH)
-        print('Finished Training. Model Saved!')
+            PATH = save_str +'/seg_head_Epoch_'+str(epoch)+'.pth'
+            torch.save(model.state_dict(), PATH)
+            print('Finished Training. Model Saved!')
         writer.close()
 
 if __name__=="__main__":

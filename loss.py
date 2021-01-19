@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 
 class FocalLoss(nn.CrossEntropyLoss):
     ''' Focal loss for classification tasks on imbalanced datasets '''
@@ -37,7 +38,7 @@ class FocalLoss_FAIR(nn.Module):
 
 class FocalLoss_(nn.Module):
     def __init__(self, gamma=0, alpha=None, size_average=True):
-        super(FocalLoss, self).__init__()
+        super(FocalLoss_, self).__init__()
         self.gamma = gamma
         self.alpha = alpha
         if isinstance(alpha,(float,int)): self.alpha = torch.Tensor([alpha,1-alpha])
@@ -51,7 +52,7 @@ class FocalLoss_(nn.Module):
             input = input.contiguous().view(-1,input.size(2))   # N,H*W,C => N*H*W,C
         target = target.view(-1,1)
 
-        logpt = F.log_softmax(input)
+        logpt = F.log_softmax(input, dim = 1)
         logpt = logpt.gather(1,target)
         logpt = logpt.view(-1)
         pt = Variable(logpt.data.exp())

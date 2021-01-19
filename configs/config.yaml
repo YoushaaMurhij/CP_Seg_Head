@@ -2,11 +2,11 @@
 # config.yaml file
 
 batch_size: 128
-epochs: 8
+epochs: 3
 workers: 16
 lr: 0.0005
 momentum: 0.8
-val_split: 0.2
+val_split: 0.3
 seed: 42
 input_size: 384
 num_classes: 33

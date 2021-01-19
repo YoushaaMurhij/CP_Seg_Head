@@ -35,18 +35,8 @@ class Seg_Head(nn.Module):
         )
 
         #self.up = nn.ConvTranspose2d(self.mid_layer//2, self.mid_layer//4, 2, stride=2, padding=0)
-
         self.conv_head3 = nn.Sequential(
-            nn.Conv2d(self.mid_layer//8, self.mid_layer//16, kernel_size=self.kernel_size, padding=0, bias=True),
-            nn.BatchNorm2d(self.mid_layer//16),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(self.mid_layer//16, self.mid_layer//32, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
-        )
-        self.conv_head4 = nn.Sequential(
-            # nn.Conv2d(self.mid_layer//2, self.mid_layer//4, kernel_size=self.kernel_size, padding=0, bias=True),
-            # nn.BatchNorm2d(self.mid_layer//4),
-            # nn.ReLU(inplace=True),
-            nn.Conv2d(self.mid_layer//32, self.output_size, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.Conv2d(self.mid_layer//8, self.output_size, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
         )
 
     def forward(self, x):
@@ -54,8 +44,6 @@ class Seg_Head(nn.Module):
         x = self.conv_head2(x)
         x = self.conv_head3(x)
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        x = self.conv_head4(x)
-        #print(x.shape)
         return x
 
 class UNET(nn.Module):
@@ -160,7 +148,7 @@ def get_model():
     return model
 
 def main():
-    torch_model = get_model()
+    torch_model = Seg_Head()
     x = torch.randn(1, 384, 128, 128, requires_grad=True)
     y = torch_model(x)
     torch.onnx.export(torch_model, x, "New_Head.onnx", export_params=True, opset_version=11,          
