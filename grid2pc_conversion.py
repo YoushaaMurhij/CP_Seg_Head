@@ -3,19 +3,17 @@ import logging
 import numpy as np
 from os import listdir
 from os.path import isfile, join
-from matplotlib import pyplot as plt
 from label_mapping import *
 
 #pc_range=(-51.2, -51.2, -5.0, 51.2, 51.2, 3.0),
 
 def load_cloud_from_bin_file(pc_f, lb_f):
-        logging.info('loading cloud from: {} and labels from : {}'.format(pc_f, lb_f))
+        logging.info('loading cloud from: {} and grids from : {}'.format(pc_f, lb_f))
         num_features = 4
         cloud = np.fromfile(pc_f, dtype=np.float32, count=-1).reshape([-1, num_features])
-        label = np.fromfile(lb_f, dtype=np.uint32)
-        label = label.reshape((-1))
+        grid = np.loadtxt(lb_f, dtype=int, delimiter=',')
         cloud = np.hstack((cloud, np.zeros([cloud.shape[0], 1])))
-        return cloud, label
+        return cloud, grid
 
 def main():
     grid_size = 256
@@ -34,13 +32,19 @@ def main():
         grd_files.sort()
     for i, (bin, grd) in enumerate(zip(bin_files, grd_files)):
 
-        cloud, grid = load_cloud_from_bin_file(bin_path + "/" + bin, grd_files + "/" + grd)
-        lbl = []
+        cloud, grid = load_cloud_from_bin_file(bin_path + "/" + bin, grd_path + "/" + grd)
+        label = []
         for j, pt in enumerate(cloud):
-            if (pt[0] > pos_offset) or (pt[1] > pos_offset) or (pt[0] < -1 * pos_offset) or (pt[1] < -1 * pos_offset) :
+            if (pt[0] >= pos_offset) or (pt[1] >= pos_offset) or (pt[0] <= -1 * pos_offset) or (pt[1] <= -1 * pos_offset) :
+                label.append(0)
                 continue
-            lbl.append(id2class(grid[int((pt[0] + pos_offset) * grid_size / pc_width - 1), int((pt[1] + pos_offset) * grid_size / pc_width - 1)]))
-        np.savetxt('00'+str(int(bin[:6]))+'.txt', lbl,  fmt='%d' , delimiter=',')
+            elif (int((pt[0] + pos_offset) * grid_size / pc_width - 1) > 255) or (int((pt[0] + pos_offset) * grid_size / pc_width - 1) > 255):
+                label.append(0)
+                continue
+            label.append(id2class[grid[int((pt[0] + pos_offset) * grid_size / pc_width - 1), int((pt[1] + pos_offset) * grid_size / pc_width - 1)]])
+        assert(len(cloud) == len(label)),"Points and labels lists should be the same lenght!"
+        np.savetxt('./data/gen_labels/'+'00'+str(int(bin[:6]))+'.txt', label,  fmt='%d' , delimiter=',')
+        print(f'{i}: {str(int(bin[:6]))} - label was saved!')
         
 
 if __name__=="__main__":

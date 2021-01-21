@@ -34,7 +34,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def evaluate(model, dataloader, device, num_classes, criterion=None, epoch=None, writer=None):
+def evaluate(model, dataloader, device, num_classes, save_dir, criterion=None, epoch=None, writer=None):
     model.eval()
     confmat = ConfusionMatrix(num_classes)
     with torch.no_grad():
@@ -48,7 +48,7 @@ def evaluate(model, dataloader, device, num_classes, criterion=None, epoch=None,
 
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
-            visual2d(output.cpu()[0], index[0])
+            visual2d(output.cpu()[0], index[0], save_dir)
             img_grid = torch.reshape(output, (-1, 1, 256, 256))
             writer.add_image('Evaluattion point cloud grids:', img_grid, dataformats='NCHW')
         confmat.reduce_from_all_processes()
@@ -149,7 +149,7 @@ def main(args):
                     writer.add_scalar('Learning rate', scheduler.get_last_lr()[0], epoch * len(train_loader) + i) #optimizer.param_groups[0]['lr']
                     sleep(0.01)
 
-            confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, criterion=criterion, epoch=epoch, writer=writer)
+            confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, save_dir=save_str, criterion=criterion, epoch=epoch, writer=writer)
 
             writer.add_scalar(f'accuracy', confmat.acc_global, epoch)
             writer.add_scalar(f'mean_IoU', confmat.mean_IoU, epoch)
