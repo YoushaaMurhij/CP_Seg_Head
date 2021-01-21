@@ -62,7 +62,7 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " -  5 * conv2d + interpolation - 3 epoches!"
+    tag = " -  5 * conv2d + interpolation - 1 epoch + dropout 0.2!"
     save_str = '.' + args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
@@ -156,7 +156,7 @@ def main(args):
 
             PATH = save_str +'/seg_head_Epoch_'+str(epoch)+'.pth'
             torch.save(model.state_dict(), PATH)
-            print('Finished Training. Model Saved!')
+        print('Finished Training. Model Saved!')
         writer.close()
 
 if __name__=="__main__":
@@ -167,5 +167,4 @@ if __name__=="__main__":
 # TODO : move to pytorch lighting!
 # TODO : fix gpu_id == 1 :) + remove some classes
 # TODO :  
-# TODO : compare with STD trainer params
 # TODO : expand the dataset [03]
