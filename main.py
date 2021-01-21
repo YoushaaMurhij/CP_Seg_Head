@@ -109,7 +109,7 @@ def main(args):
     if args.test_only:
         checkpoint = torch.load(args.pretrained, map_location='cpu')
         model.load_state_dict(checkpoint)
-        confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, writer=writer)
+        confmat = evaluate(model, valid_loader, device, num_classes, save_str, None, None, writer=writer)
         print(confmat)
         print("Finished Testing!")
         return
