@@ -30,10 +30,10 @@ class FeaturesDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        feat_name = os.path.join(self.feat_dir,'{:06}'.format(idx)+'.bin.pt')
+        feat_name = os.path.join(self.feat_dir,'{:07}'.format(idx)+'.bin.pt')
         feature = torch.load(feat_name)
 
-        label_name = os.path.join(self.label_dir,'{:06}'.format(idx)+'.txt')
+        label_name = os.path.join(self.label_dir,'{:07}'.format(idx)+'.txt')
         label = np.loadtxt(label_name, dtype=int, delimiter=',')
         #label = label.astype('int')
 
