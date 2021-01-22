@@ -10,7 +10,7 @@ def visual2d(grid, index, save_dir):
     '''Visualizing a sample for the every batch as a picture'''
     plt.figure() #TODO add colors
     plt.imshow(grid, interpolation='bilinear')
-    plt.savefig(save_dir + '/' + str(index) + '.png')
+    plt.savefig(save_dir + '/' + '{:0>7}'.format(index) + '.png')
     plt.clf()
     plt.close()
 

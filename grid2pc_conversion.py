@@ -43,7 +43,7 @@ def main():
                 continue
             label.append(id2class[grid[int((pt[0] + pos_offset) * grid_size / pc_width - 1), int((pt[1] + pos_offset) * grid_size / pc_width - 1)]])
         assert(len(cloud) == len(label)),"Points and labels lists should be the same lenght!"
-        np.savetxt('./data/gen_labels/'+'00000'+str(int(bin[:6]))+'.label', label,  fmt='%d' , delimiter=',')
+        np.savetxt('./data/gen_labels/'+'{:0>7}'.format(int(bin[:6]))+'.label', label,  fmt='%d' , delimiter=',')
         print(f'{i}: {str(int(bin[:6]))} - label was saved!')
         
 

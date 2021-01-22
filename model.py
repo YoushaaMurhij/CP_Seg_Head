@@ -16,7 +16,7 @@ class Seg_Head(nn.Module):
         self.mid_layer = 256
         self.output_size = 33
         self.kernel_size = 1
-        self.dropout = 0.2
+        self.dropout = 0.4
 
         self.conv_head1 = nn.Sequential(
             nn.Conv2d(self.input_size, self.mid_layer, kernel_size=self.kernel_size, padding=0, bias=True),
