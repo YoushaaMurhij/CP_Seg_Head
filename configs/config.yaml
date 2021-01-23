@@ -9,6 +9,6 @@ momentum: 0.8
 val_split: 0.1
 seed: 42
 input_size: 384
-num_classes: 33
+num_classes: 26
 grid_size: 256
 weight_decay: 0.005

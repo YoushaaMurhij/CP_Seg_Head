@@ -62,7 +62,7 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " -  5 * conv2d + interpolation - 3 epoch + dropout 0.3 (128-64-64)!"
+    tag = " -  5 * conv2d + interpolation - 3 epoch + dropout 0.15 (256-128-64-32)!"
     save_str = '.' + args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
