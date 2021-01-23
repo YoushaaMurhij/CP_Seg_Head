@@ -48,7 +48,7 @@ def evaluate(model, dataloader, device, num_classes, save_dir, criterion=None, e
 
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
-            visual2d(output.cpu()[0], index[0], save_dir)
+            visual2d(output.cpu()[0], index[0], save_dir, str(epoch))
             img_grid = torch.reshape(output, (-1, 1, 256, 256))
             writer.add_image('Evaluattion point cloud grids:', img_grid, dataformats='NCHW')
         confmat.reduce_from_all_processes()
@@ -62,7 +62,7 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " -  5 * conv2d + interpolation - 2 epoch + dropout 0.4!"
+    tag = " -  5 * conv2d + interpolation - 3 epoch + dropout 0.3 (128-64-64)!"
     save_str = '.' + args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
@@ -150,7 +150,7 @@ def main(args):
                     sleep(0.01)
 
             confmat = evaluate(model, valid_loader, device=device, num_classes=num_classes, save_dir=save_str, criterion=criterion, epoch=epoch, writer=writer)
-
+            print(confmat)
             writer.add_scalar(f'accuracy', confmat.acc_global, epoch)
             writer.add_scalar(f'mean_IoU', confmat.mean_IoU, epoch)
 

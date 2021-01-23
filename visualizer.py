@@ -6,11 +6,11 @@ from os import listdir
 from os.path import isfile, join
 from matplotlib import pyplot as plt
 
-def visual2d(grid, index, save_dir):
+def visual2d(grid, index, save_dir, epoch=''):
     '''Visualizing a sample for the every batch as a picture'''
     plt.figure() #TODO add colors
     plt.imshow(grid, interpolation='bilinear')
-    plt.savefig(save_dir + '/' + '{:0>7}'.format(index) + '.png')
+    plt.savefig(save_dir + '/' + epoch + '{:0>7}'.format(index) + '.png')
     plt.clf()
     plt.close()
 

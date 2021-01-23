@@ -16,32 +16,32 @@ class Seg_Head(nn.Module):
         self.mid_layer = 256
         self.output_size = 33
         self.kernel_size = 1
-        self.dropout = 0.4
+        self.dropout = 0.3
 
         self.conv_head1 = nn.Sequential(
-            nn.Conv2d(self.input_size, self.mid_layer, kernel_size=self.kernel_size, padding=0, bias=True),
-            nn.Dropout(self.dropout),
-            nn.BatchNorm2d(self.mid_layer),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(self.mid_layer, self.mid_layer//2, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.Conv2d(self.input_size, self.mid_layer//2, kernel_size=self.kernel_size, padding=0, bias=True),
             nn.Dropout(self.dropout),
             nn.BatchNorm2d(self.mid_layer//2),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(self.mid_layer//2, self.mid_layer//4, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.Dropout(self.dropout),
+            nn.BatchNorm2d(self.mid_layer//4),
             nn.ReLU(inplace=True)
         )
         self.conv_head2 = nn.Sequential(
-            nn.Conv2d(self.mid_layer//2, self.mid_layer//4, kernel_size=self.kernel_size, padding=0, bias=True),
+            nn.Conv2d(self.mid_layer//4, self.mid_layer//4, kernel_size=self.kernel_size, padding=0, bias=True),
             nn.Dropout(self.dropout),
             nn.BatchNorm2d(self.mid_layer//4),
             nn.ReLU(inplace=True),
-            nn.Conv2d(self.mid_layer//4, self.mid_layer//8, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.Conv2d(self.mid_layer//4, self.mid_layer//4, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
             nn.Dropout(self.dropout),
-            nn.BatchNorm2d(self.mid_layer//8),
+            nn.BatchNorm2d(self.mid_layer//4),
             nn.ReLU(inplace=True)
         )
 
         #self.up = nn.ConvTranspose2d(self.mid_layer//2, self.mid_layer//4, 2, stride=2, padding=0)
         self.conv_head3 = nn.Sequential(
-            nn.Conv2d(self.mid_layer//8, self.output_size, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.Conv2d(self.mid_layer//4, self.output_size, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
         )
 
     def forward(self, x):
