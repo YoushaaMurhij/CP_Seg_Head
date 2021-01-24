@@ -20,68 +20,51 @@
 import open3d.ml.torch as ml3d
 from open3d.ml.vis import Visualizer, LabelLUT
 from open3d.ml.utils import get_module
+from label_mapping import label_name_mapping
 
 import math
 import numpy as np
-import os
 import random
-import sys
+from os import listdir
 from os.path import exists, join, isfile, dirname, abspath, split
 
-# ------ for custom data -------
-kitti_labels = {
-    0: 'unlabeled',
-    1: 'car',
-    2: 'bicycle',
-    3: 'motorcycle',
-    4: 'truck',
-    5: 'other-vehicle',
-    6: 'person',
-    7: 'bicyclist',
-    8: 'motorcyclist',
-    9: 'road',
-    10: 'parking',
-    11: 'sidewalk',
-    12: 'other-ground',
-    13: 'building',
-    14: 'fence',
-    15: 'vegetation',
-    16: 'trunk',
-    17: 'terrain',
-    18: 'pole',
-    19: 'traffic-sign'
-}
-
-def get_custom_data(pc_names, path):
+def get_custom_data(bin_path, lbl_path):
 
     pc_data = []
-    for i, name in enumerate(pc_names):
-        pc_path = join(path, 'points', name + '.bin')
-        label_path = join(path, 'labels', name + '.label')
-        point = np.load(pc_path)[:, 0:3]
-        label = np.squeeze(np.load(label_path))
+    bin_files = [f for f in listdir(bin_path) if isfile(join(bin_path, f))][:]
+    lbl_files = [f for f in listdir(lbl_path) if isfile(join(lbl_path, f))][:]
 
+    for i, (bin,lbl) in enumerate(zip(bin_files, lbl_files)):
+        num_features = 4
+        cloud = np.fromfile(bin_path + "/" + bin, dtype=np.float32, count=-1).reshape([-1, num_features])[:, 0:3]
+        label = np.loadtxt(lbl_path + "/" + lbl, dtype=np.int32, delimiter=',')
+        label = np.squeeze(label)
         data = {
-            'point': point,
+            'name': bin,
+            'points': cloud,
             'feat': None,
             'label': label,
         }
         pc_data.append(data)
-
+    #print(pc_data)
     return pc_data
 
 def main():
+    kitti_labels = label_name_mapping
 
-    path = "/home/cds-josh/data/"
+    bin_path = "./data/bins"
+    label_path = "./data/gen_labels"
     v = Visualizer()
     lut = LabelLUT()
-    for val in sorted(kitti_labels.keys()):
-        lut.add_label(kitti_labels[val], val)
+    for val in sorted(label_name_mapping.keys()):
+        lut.add_label(label_name_mapping[val], val)
     v.set_lut("labels", lut)
-    path = os.path.dirname(os.path.realpath(__file__)) + "/demo_data"
-
-    pcs = get_custom_data(pc_names, path)
-    v.visualize_dataset(pcs, "PCs")
+    v.set_lut("pred", lut)
+    point_clouds = get_custom_data(bin_path, label_path)
+    v.visualize(point_clouds)
 
 if __name__ == "__main__":
     main()
+
+
+# improve memory usage here ()
