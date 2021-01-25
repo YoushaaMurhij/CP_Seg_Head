@@ -14,7 +14,6 @@ def load_cloud_from_bin_file(pc_f, lb_f):
         cloud = np.fromfile(pc_f, dtype=np.float32, count=-1).reshape([-1, num_features])
         label = np.fromfile(lb_f, dtype=np.uint32)
         label = label.reshape((-1))
-        cloud = np.hstack((cloud, np.zeros([cloud.shape[0], 1])))
         return cloud, label
 
 def main():

@@ -19,12 +19,9 @@
 #!/usr/bin/env python
 import open3d.ml.torch as ml3d
 from open3d.ml.vis import Visualizer, LabelLUT
-from open3d.ml.utils import get_module
 from label_mapping import label_name_mapping
 
-import math
 import numpy as np
-import random
 from os import listdir
 from os.path import exists, join, isfile, dirname, abspath, split
 
@@ -33,11 +30,13 @@ def get_custom_data(bin_path, lbl_path):
     pc_data = []
     bin_files = [f for f in listdir(bin_path) if isfile(join(bin_path, f))][:]
     lbl_files = [f for f in listdir(lbl_path) if isfile(join(lbl_path, f))][:]
+    bin_files.sort()
+    lbl_files.sort()
 
     for i, (bin,lbl) in enumerate(zip(bin_files, lbl_files)):
         num_features = 4
-        cloud = np.fromfile(bin_path + "/" + bin, dtype=np.float32, count=-1).reshape([-1, num_features])[:, 0:3]
-        label = np.loadtxt(lbl_path + "/" + lbl, dtype=np.int32, delimiter=',')
+        cloud = np.fromfile(bin_path + "/" + bin, dtype=np.float32, count=-1).reshape([-1, num_features])
+        label = np.loadtxt(lbl_path + "/" + lbl, dtype=np.int32)
         label = np.squeeze(label)
         data = {
             'name': bin,
@@ -46,12 +45,9 @@ def get_custom_data(bin_path, lbl_path):
             'label': label,
         }
         pc_data.append(data)
-    #print(pc_data)
     return pc_data
 
 def main():
-    kitti_labels = label_name_mapping
-
     bin_path = "./data/bins"
     label_path = "./data/gen_labels"
     v = Visualizer()

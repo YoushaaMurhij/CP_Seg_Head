@@ -14,7 +14,6 @@ def load_cloud_from_bin_file(pc_f, lb_f):
         num_features = 4
         cloud = np.fromfile(pc_f, dtype=np.float32, count=-1).reshape([-1, num_features])
         grid = np.loadtxt(lb_f, dtype=int, delimiter=',')
-        cloud = np.hstack((cloud, np.zeros([cloud.shape[0], 1])))
         return cloud, grid
 
 def main():
@@ -45,15 +44,7 @@ def main():
                 continue
             label.append(id2class[grid[int((pt[0] + pos_offset) * grid_size / pc_width), int((pt[1] + pos_offset) * grid_size / pc_width)]])
         assert(len(cloud) == len(label)),"Points and labels lists should be the same lenght!"
-        # print(shape(label))
-        # label = label.reshape((-1))
-        # upper_half = label >> 16      # get upper half for instances
-        # lower_half = label & 0xFFFF   # get lower half for semantics
-        # lower_half = remap_lut[lower_half]  # do the remapping of semantics
-        # label = (upper_half << 16) + lower_half   # reconstruct full label
-        # label = label.astype(np.uint32)
-        # label.tofile(label_file)
-        np.savetxt('./data/gen_labels/'+'{:0>8}'.format(int(bin[:6]))+'.label', label,  fmt='%d' , delimiter=',')
+        np.savetxt('./data/gen_labels/'+'{:0>8}'.format(int(bin[:6]))+'.label', label,  fmt='%d')
         print(f'{i}: {str(int(bin[:6]))} - label was saved!')
         
 
