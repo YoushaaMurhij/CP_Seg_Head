@@ -16,24 +16,24 @@ class Seg_Head(nn.Module):
         self.mid_layer = 256
         self.output_size = 26
         self.kernel_size = 1
-        self.dropout = 0.15
+        self.dropout = 0.1
 
         self.conv_head1 = nn.Sequential(
-            nn.Conv2d(self.input_size, self.mid_layer, kernel_size=self.kernel_size, padding=0, bias=True),
+            nn.Conv2d(self.input_size, self.mid_layer, kernel_size=3, stride=1, padding=1, bias=True),
             nn.Dropout(self.dropout),
             nn.BatchNorm2d(self.mid_layer),
             nn.ReLU(inplace=True),
-            nn.Conv2d(self.mid_layer, self.mid_layer//2, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.Conv2d(self.mid_layer, self.mid_layer//2, kernel_size=3, stride=1, padding=1, bias=True),
             nn.Dropout(self.dropout),
             nn.BatchNorm2d(self.mid_layer//2),
             nn.ReLU(inplace=True)
         )
         self.conv_head2 = nn.Sequential(
-            nn.Conv2d(self.mid_layer//2, self.mid_layer//4, kernel_size=self.kernel_size, padding=0, bias=True),
+            nn.Conv2d(self.mid_layer//2, self.mid_layer//4, kernel_size=3, stride=1, padding=1, bias=True),
             nn.Dropout(self.dropout),
             nn.BatchNorm2d(self.mid_layer//4),
             nn.ReLU(inplace=True),
-            nn.Conv2d(self.mid_layer//4, self.mid_layer//8, kernel_size=self.kernel_size, stride=1, padding=0, bias=True),
+            nn.Conv2d(self.mid_layer//4, self.mid_layer//8, kernel_size=3, stride=1, padding=1, bias=True),
             nn.Dropout(self.dropout),
             nn.BatchNorm2d(self.mid_layer//8),
             nn.ReLU(inplace=True)

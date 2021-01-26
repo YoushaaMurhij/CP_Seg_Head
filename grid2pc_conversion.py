@@ -39,9 +39,6 @@ def main():
             if (pt[0] >= pos_offset) or (pt[1] >= pos_offset) or (pt[0] < -1 * pos_offset) or (pt[1] < -1 * pos_offset) :
                 label.append(0)
                 continue
-            elif (int((pt[0] + pos_offset) * grid_size / pc_width) > 255) or (int((pt[1] + pos_offset) * grid_size / pc_width) > 255):
-                label.append(0)
-                continue
             label.append(id2class[grid[int((pt[0] + pos_offset) * grid_size / pc_width), int((pt[1] + pos_offset) * grid_size / pc_width)]])
         assert(len(cloud) == len(label)),"Points and labels lists should be the same lenght!"
         np.savetxt('./data/gen_labels/'+'{:0>8}'.format(int(bin[:6]))+'.label', label,  fmt='%d')
