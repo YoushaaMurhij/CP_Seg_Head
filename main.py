@@ -170,8 +170,8 @@ if __name__=="__main__":
     args = parse_args()
     main(args)
 
-# TODO : add Parallel training support
+# TODO : 
 # TODO : move to pytorch lighting!
-# TODO : fix gpu_id == 1 :) + remove some classes
+# TODO :
 # TODO :  
 # TODO : expand the dataset [03]
