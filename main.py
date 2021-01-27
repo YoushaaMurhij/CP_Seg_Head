@@ -48,9 +48,12 @@ def evaluate(model, dataloader, device, num_classes, save_dir, criterion=None, e
 
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
+
             visual2d(output.cpu()[0], index[0], save_dir, str(epoch))
-            img_grid = torch.reshape(output, (-1, 1, 256, 256))
-            writer.add_image('Evaluattion point cloud grids:', img_grid, dataformats='NCHW')
+            if writer is not None:
+                img_grid = torch.reshape(output, (-1, 1, 256, 256))
+                writer.add_image('Evaluattion point cloud grids:', img_grid, dataformats='NCHW')
+
         confmat.reduce_from_all_processes()
     return confmat
 
@@ -87,7 +90,9 @@ def main(args):
     # Creating data indices for training and validation splits:
     dataset_size = len(dataset)
     indices = list(range(dataset_size))
+    print(indices)
     split = int(np.floor(validation_split * dataset_size))
+    test_indices = indices[:4541]
     if shuffle_dataset :
         np.random.seed(random_seed)
         np.random.shuffle(indices)
@@ -95,10 +100,12 @@ def main(args):
 
     train_sampler = SubsetRandomSampler(train_indices)
     valid_sampler = SubsetRandomSampler(val_indices)
+    test_sampler = SubsetRandomSampler(test_indices)
 
     train_loader = DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
     valid_loader = DataLoader(dataset, batch_size=batch_size // 8, sampler=valid_sampler)
-    
+    test_loader = DataLoader(dataset, batch_size=1, sampler=test_sampler)
+
     device = torch.device(args.device)
     print(f'cuda device is: {device}')
 
@@ -109,7 +116,7 @@ def main(args):
     if args.test_only:
         checkpoint = torch.load(args.pretrained, map_location='cpu')
         model.load_state_dict(checkpoint)
-        confmat = evaluate(model, valid_loader, device, num_classes, save_str, None, None, writer=writer)
+        confmat = evaluate(model, test_loader, device, num_classes, save_str)
         print(confmat)
         print("Finished Testing!")
         return
