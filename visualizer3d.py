@@ -28,12 +28,13 @@ from os.path import exists, join, isfile, dirname, abspath, split
 def get_custom_data(bin_path, lbl_path):
 
     pc_data = []
-    bin_files = [f for f in listdir(bin_path) if isfile(join(bin_path, f))][:]
-    lbl_files = [f for f in listdir(lbl_path) if isfile(join(lbl_path, f))][:]
+    bin_files = [f for f in listdir(bin_path) if isfile(join(bin_path, f))]
+    lbl_files = [f for f in listdir(lbl_path) if isfile(join(lbl_path, f))]
     bin_files.sort()
     lbl_files.sort()
 
-    for i, (bin,lbl) in enumerate(zip(bin_files, lbl_files)):
+    for i, (bin,lbl) in enumerate(zip(bin_files[:100], lbl_files[:100])):
+        print(f'{bin} & {lbl} mapped!')
         num_features = 4
         cloud = np.fromfile(bin_path + "/" + bin, dtype=np.float32, count=-1).reshape([-1, num_features])
         label = np.loadtxt(lbl_path + "/" + lbl, dtype=np.int32)
@@ -48,8 +49,8 @@ def get_custom_data(bin_path, lbl_path):
     return pc_data
 
 def main():
-    bin_path = "./data/bins"
-    label_path = "./data/gen_labels"
+    bin_path = "/home/cds-josh/data/bins"
+    label_path = "/home/cds-josh/data/gen_labels"
     v = Visualizer()
     lut = LabelLUT()
     for val in sorted(label_name_mapping.keys()):
