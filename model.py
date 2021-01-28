@@ -19,7 +19,7 @@ class Seg_Head(nn.Module):
         self.dropout = 0.1
 
         self.conv_head1 = nn.Sequential(
-            nn.Conv2d(self.input_size, self.mid_layer, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.Conv2d(self.input_size, self.mid_layer, kernel_size=1, stride=1, padding=0, bias=True),
             nn.Dropout(self.dropout),
             nn.BatchNorm2d(self.mid_layer),
             nn.ReLU(inplace=True),

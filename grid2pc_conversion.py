@@ -20,17 +20,15 @@ def main():
     grid_size = 256
     pos_offset = 51.2 
     pc_width = 51.2 * 2
+    bin_path=sys.argv[1]
+    grd_path=sys.argv[2]
 
-    if len(sys.argv) < 3:
-        logging.error('Enter a lidar bin folder[1] path and grid folder[2] path!')
-    else:
-        bin_path=sys.argv[1]
-        grd_path=sys.argv[2]
-        bin_files = [f for f in listdir(bin_path) if isfile(join(bin_path, f))]
-        grd_files = [f for f in listdir(grd_path) if isfile(join(grd_path, f))]
-        assert(len(bin_files) == len(grd_files)),"Number of Points and grid files should be the same!"
-        bin_files.sort()
-        grd_files.sort()
+    bin_files = [f for f in listdir(bin_path) if isfile(join(bin_path, f))]
+    grd_files = [f for f in listdir(grd_path) if isfile(join(grd_path, f))]
+    assert(len(bin_files) == len(grd_files)),"Number of Points and grid files should be the same!"
+    bin_files.sort()
+    grd_files.sort()
+
     for i, (bin, grd) in enumerate(zip(bin_files, grd_files)):
         print(f'{bin} & {grd} mapped!')
         cloud, grid = load_cloud_from_bin_file(bin_path + "/" + bin, grd_path + "/" + grd)
@@ -39,10 +37,13 @@ def main():
             if (pt[0] >= pos_offset) or (pt[1] >= pos_offset) or (pt[0] < -1 * pos_offset) or (pt[1] < -1 * pos_offset) :
                 label.append(0)
                 continue
-            label.append(id2class[grid[int((pt[0] + pos_offset) * grid_size / pc_width), int((pt[1] + pos_offset) * grid_size / pc_width)]])
+            label.append(id2class[grid[int((pt[1] + pos_offset) * grid_size / pc_width), int((pt[0] + pos_offset) * grid_size / pc_width)]])
         assert(len(cloud) == len(label)),"Points and labels lists should be the same lenght!"
         np.savetxt('/home/cds-josh/data/gen_labels/'+'{:0>7}'.format(int(bin[:6]))+'.label', label,  fmt='%d')
         
 
 if __name__=="__main__":
-    main()
+    if len(sys.argv) < 3:
+        logging.error('Enter a lidar bin folder[1] path and grid folder[2] path!')
+    else:
+        main()

@@ -33,7 +33,7 @@ def get_custom_data(bin_path, lbl_path):
     bin_files.sort()
     lbl_files.sort()
 
-    for i, (bin,lbl) in enumerate(zip(bin_files[:100], lbl_files[:100])):
+    for i, (bin,lbl) in enumerate(zip(bin_files[:10], lbl_files[:10])):
         print(f'{bin} & {lbl} mapped!')
         num_features = 4
         cloud = np.fromfile(bin_path + "/" + bin, dtype=np.float32, count=-1).reshape([-1, num_features])
