@@ -42,9 +42,9 @@ def main():
         for j, (pt, lb) in enumerate(zip(cloud, label)):
             if (lb > 259) or (pt[0] >= pos_offset) or (pt[1] >= pos_offset) or (pt[0] < -1 * pos_offset) or (pt[1] < -1 * pos_offset) :
                 continue
-            seg_grid[int((pt[0] + pos_offset) * grid_size / pc_width), int((pt[1] + pos_offset) * grid_size / pc_width), class2id[lb]] += 1  
+            seg_grid[int((pt[1] + pos_offset) * grid_size / pc_width), int((pt[0] + pos_offset) * grid_size / pc_width), class2id[lb]] += 1  
         fin_grid = np.argmax(seg_grid, axis=2)
-        np.savetxt('{:0>7}'.format(int(lbl[:6]))+'.txt', fin_grid,  fmt='%d' , delimiter=',')
+        np.savetxt('{:0>7}'.format(int(lbl[:6])+5632)+'.txt', fin_grid,  fmt='%d' , delimiter=',')
 
         if save_png:
             plt.figure()

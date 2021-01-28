@@ -65,7 +65,7 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " -  5 * conv2d + interpolation - 3 epoch + dropout 0.1 (256-128-64-32) + kernel (3-3-3-3-1)"
+    tag = " -  5 * conv2d + interpolation - 3 epoch + dropout 0.1 (256-128-64-32) + kernel (3-1-1-1-1)"
     save_str = '.' + args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
@@ -90,7 +90,6 @@ def main(args):
     # Creating data indices for training and validation splits:
     dataset_size = len(dataset)
     indices = list(range(dataset_size))
-    print(indices)
     split = int(np.floor(validation_split * dataset_size))
     test_indices = indices[:4541]
     if shuffle_dataset :
