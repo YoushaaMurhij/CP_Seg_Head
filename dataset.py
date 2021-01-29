@@ -9,6 +9,7 @@
 
 import os
 import torch
+from torch._C import device
 from torch.utils.data import Dataset
 import numpy as np
 from os import listdir
@@ -17,8 +18,9 @@ from os.path import isfile, join
 class FeaturesDataset(Dataset):
     """segmentation features dataset."""
 
-    def __init__(self, feat_dir, label_dir):
+    def __init__(self, feat_dir, label_dir, device):
         
+        self.device = device
         self.feat_dir = feat_dir
         self.label_dir = label_dir
         self.features_files = [f for f in listdir(self.feat_dir) if isfile(join(self.feat_dir, f))]
@@ -31,7 +33,7 @@ class FeaturesDataset(Dataset):
             idx = idx.tolist()
 
         feat_name = os.path.join(self.feat_dir,'{:07}'.format(idx)+'.bin.pt')
-        feature = torch.load(feat_name)
+        feature = torch.load(feat_name, map_location=self.device)
 
         label_name = os.path.join(self.label_dir,'{:07}'.format(idx)+'.txt')
         label = np.loadtxt(label_name, dtype=int, delimiter=',')

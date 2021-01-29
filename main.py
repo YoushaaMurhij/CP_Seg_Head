@@ -14,7 +14,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from dataset import FeaturesDataset
 from model import Seg_Head, UNET, New_Head, get_model
 from visualizer import visual2d
-from loss import FocalLoss
+from loss import *
 from losses import GDiceLossV2
 from utils import *
 from tqdm import tqdm
@@ -65,7 +65,7 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " -  5 * conv2d + interpolation - 3 epoch + dropout 0.1 (256-128-64-32) + kernel (1-1-1-1-1) - Dice continue!"
+    tag = " -  5 * conv2d + interpolation - 3 epoch + dropout 0.1 (256-128-64-32) + kernel (1-1-1-1-1) - Focal weights!"
     save_str = '.' + args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
@@ -85,7 +85,10 @@ def main(args):
 
     writer = SummaryWriter(save_str)
 
-    dataset = FeaturesDataset(feat_dir='/home/josh94mur/data/features', label_dir='/home/josh94mur/data/targets/') 
+    device = torch.device(args.device)
+    print(f'cuda device is: {device}')
+
+    dataset = FeaturesDataset(feat_dir='/home/josh94mur/data/features', label_dir='/home/josh94mur/data/targets/', device=device) 
 
     # Creating data indices for training and validation splits:
     dataset_size = len(dataset)
@@ -105,9 +108,6 @@ def main(args):
     valid_loader = DataLoader(dataset, batch_size=batch_size // 8, sampler=valid_sampler)
     test_loader = DataLoader(dataset, batch_size=1, sampler=test_sampler)
 
-    device = torch.device(args.device)
-    print(f'cuda device is: {device}')
-
     model = Seg_Head().to(device)
     # model = UNET(input_size, num_classes).to(device)
     #model = get_model().to(device)
@@ -125,8 +125,7 @@ def main(args):
             model.load_state_dict(checkpoint)
         writer.add_graph(model, torch.randn(1, 384, 128, 128, requires_grad=False).to(device))
 
-        #criterion = FocalLoss(alpha=0.8, gamma=2)
-        criterion = GDiceLossV2()
+        criterion = FocalLoss_(alpha=CLASS_WEIGHTS, gamma=2)
         optimizer = optim.SGD(model.parameters(), weight_decay = weight_decay, lr=learning_rate, momentum=momentum)
         #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader), eta_min=learning_rate)
         scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda x: (1 - x / (len(train_loader) * num_epochs)) ** 0.8)
@@ -140,8 +139,8 @@ def main(args):
 
                     features = data['feature']
                     labels = data['label']
-                    if torch.cuda.is_available(): 
-                        labels = labels.cuda()
+                     
+                    labels = labels.to(device)
 
                     optimizer.zero_grad()
                     outputs = model(features)
