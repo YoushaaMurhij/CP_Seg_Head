@@ -14,7 +14,8 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from dataset import FeaturesDataset
 from model import Seg_Head, UNET, New_Head, get_model
 from visualizer import visual2d
-from loss import FocalLoss_
+from loss import FocalLoss
+from losses import GDiceLossV2
 from utils import *
 from tqdm import tqdm
 import numpy as np
@@ -64,7 +65,7 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " -  5 * conv2d + interpolation - 3 epoch + dropout 0.1 (256-128-64-32) + kernel (1-1-1-1-1) - continue 2"
+    tag = " -  5 * conv2d + interpolation - 3 epoch + dropout 0.1 (256-128-64-32) + kernel (1-1-1-1-1) - Dice continue!"
     save_str = '.' + args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
@@ -124,7 +125,8 @@ def main(args):
             model.load_state_dict(checkpoint)
         writer.add_graph(model, torch.randn(1, 384, 128, 128, requires_grad=False).to(device))
 
-        criterion = FocalLoss_(gamma=2)
+        #criterion = FocalLoss(alpha=0.8, gamma=2)
+        criterion = GDiceLossV2()
         optimizer = optim.SGD(model.parameters(), weight_decay = weight_decay, lr=learning_rate, momentum=momentum)
         #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader), eta_min=learning_rate)
         scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda x: (1 - x / (len(train_loader) * num_epochs)) ** 0.8)
