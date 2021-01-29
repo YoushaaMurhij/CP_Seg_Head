@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument("--test-only", dest="test_only", help="Only test the model", action="store_true")
     parser.add_argument("--pretrained", default="seg_head.pth", help="Use pre-trained models")
     parser.add_argument('--save_dir', default='/logs/train_data/', help='path where to save output models and logs')
+    parser.add_argument('--focal_loss', action='store_true', help='train with focal loss')
 
     args = parser.parse_args()
     return args
@@ -65,7 +66,7 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " -  5 * conv2d + interpolation - 3 epoch + dropout 0.1 (256-128-64-32) + kernel (1-1-1-1-1) - Focal weights!"
+    tag = " -  5 * conv2d + interpolation - 3 epoch + dropout 0.1 (256-128-64-32) + kernel (1-1-1-1-1) - CE Loss + weights!"
     save_str = '.' + args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
@@ -125,7 +126,12 @@ def main(args):
             model.load_state_dict(checkpoint)
         writer.add_graph(model, torch.randn(1, 384, 128, 128, requires_grad=False).to(device))
 
-        criterion = FocalLoss_(alpha=CLASS_WEIGHTS, gamma=2)
+        if args.focal_loss:
+            criterion = FocalLoss_(gamma=2, alpha=CLASS_WEIGHTS)
+        else:
+            loss_weights = torch.FloatTensor(CLASS_WEIGHTS).to(device)
+            criterion = nn.CrossEntropyLoss(weight=loss_weights)
+
         optimizer = optim.SGD(model.parameters(), weight_decay = weight_decay, lr=learning_rate, momentum=momentum)
         #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader), eta_min=learning_rate)
         scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda x: (1 - x / (len(train_loader) * num_epochs)) ** 0.8)
