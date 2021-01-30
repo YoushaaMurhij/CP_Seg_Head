@@ -23,16 +23,13 @@ def main():
     num_classes = 26 
     save_png = False
 
-    if len(sys.argv) < 3:
-        logging.error('Enter a lidar bin folder[1] path and label folder[2] path!')
-    else:
-        bin_path=sys.argv[1]
-        lbl_path=sys.argv[2]
-        bin_files = [f for f in listdir(bin_path) if isfile(join(bin_path, f))]
-        lbl_files = [f for f in listdir(lbl_path) if isfile(join(lbl_path, f))]
-        assert(len(bin_files) == len(lbl_files)),"Number of Points and labels files should be the same!"
-        bin_files.sort()
-        lbl_files.sort()
+    bin_path=sys.argv[1]
+    lbl_path=sys.argv[2]
+    bin_files = [f for f in listdir(bin_path) if isfile(join(bin_path, f))]
+    lbl_files = [f for f in listdir(lbl_path) if isfile(join(lbl_path, f))]
+    assert(len(bin_files) == len(lbl_files)),"Number of Points and labels files should be the same!"
+    bin_files.sort()
+    lbl_files.sort()
     for i, (bin, lbl) in enumerate(zip(bin_files, lbl_files)):
         seg_grid = np.zeros([grid_size, grid_size, num_classes])
         seg_grid.astype(int)
@@ -54,4 +51,8 @@ def main():
         
 
 if __name__=="__main__":
-    main()
+
+    if len(sys.argv) < 3:
+        logging.error('Enter a lidar bin folder[1] path and label folder[2] path!')
+    else:
+        main()
