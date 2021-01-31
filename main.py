@@ -32,7 +32,6 @@ def parse_args():
     parser.add_argument("--pretrained", default="seg_head.pth", help="Use pre-trained models")
     parser.add_argument('--save_dir', default='/logs/train_data/', help='path where to save output models and logs')
     parser.add_argument('--focal_loss', action='store_true', help='train with focal loss')
-
     args = parser.parse_args()
     return args
 
@@ -47,7 +46,6 @@ def evaluate(model, dataloader, device, num_classes, save_dir, criterion=None, e
             if criterion is not None:
                 loss = criterion(output, label)
                 writer.add_scalar('Validation Loss', loss.item(), epoch * len(dataloader) + i)
-
             output = output.argmax(1)
             confmat.update(label.cpu().flatten(), output.cpu().flatten())
 
@@ -66,7 +64,7 @@ def main(args):
         print(cfg)
     
     now = datetime.now()
-    tag = " -  5 * conv2d + interpolation - 25 epoch + dropout 0.1 (256-128-64-32) + kernel (1-1-1-1-1) - Test !"
+    tag = " -  5 * conv2d + interpolation - 25 epoch + dropout 0.1 (256-128-64-32) + kernel (1-1-1-1-1) - CE ep 10 TEST !"
     save_str = '.' + args.save_dir + now.strftime("%d-%m-%Y-%H:%M:%S") + tag
     print("------------------------------------------")
     print("Use : tensorboard --logdir logs/train_data")
@@ -90,12 +88,10 @@ def main(args):
     print(f'cuda device is: {device}')
 
     dataset = FeaturesDataset(feat_dir='/home/josh94mur/data/features', label_dir='/home/josh94mur/data/targets/', device=device) 
-
-    # Creating data indices for training and validation splits:
     dataset_size = len(dataset)
     indices = list(range(dataset_size))
     split = int(np.floor(validation_split * dataset_size))
-    test_indices = indices[:100]
+    test_indices = indices[:200]
     if shuffle_dataset :
         np.random.seed(random_seed)
         np.random.shuffle(indices)
@@ -110,8 +106,6 @@ def main(args):
     test_loader = DataLoader(dataset, batch_size=1, sampler=test_sampler)
 
     model = Seg_Head().to(device)
-    # model = UNET(input_size, num_classes).to(device)
-    #model = get_model().to(device)
 
     if args.test_only:
         checkpoint = torch.load(args.pretrained, map_location='cpu')
@@ -145,7 +139,6 @@ def main(args):
 
                     features = data['feature']
                     labels = data['label']
-                     
                     labels = labels.to(device)
 
                     optimizer.zero_grad()

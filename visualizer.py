@@ -10,7 +10,7 @@ def visual2d(grid, index, save_dir, epoch=None):
     '''Visualizing a sample for the every batch as a picture'''
     plt.figure() #TODO add colors
     plt.imshow(grid, interpolation='bilinear')
-    np.savetxt( save_dir + '/{:0>7}'.format(index) + '.txt', grid,  fmt='%d', delimiter=',')
+    #np.savetxt( save_dir + '/{:0>7}'.format(index) + '.txt', grid,  fmt='%d', delimiter=',')
     if epoch != 'None':
         plt.savefig(save_dir + '/Epoch_' + epoch + '_{:0>7}'.format(index) + '.png')
     else:
