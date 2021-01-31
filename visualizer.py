@@ -11,7 +11,7 @@ def visual2d(grid, index, save_dir, epoch=None):
     plt.figure() #TODO add colors
     plt.imshow(grid, interpolation='bilinear')
     np.savetxt( save_dir + '/{:0>7}'.format(index) + '.txt', grid,  fmt='%d', delimiter=',')
-    if epoch is not None:
+    if epoch != 'None':
         plt.savefig(save_dir + '/Epoch_' + epoch + '_{:0>7}'.format(index) + '.png')
     else:
         plt.savefig(save_dir + '/_{:0>7}'.format(index) + '.png')
