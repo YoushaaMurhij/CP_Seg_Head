@@ -1,4 +1,4 @@
-# CenterPoint_Segmentation_Head
+# CP_Seg_Head
 
 --to be updated! 
 --add deps!
